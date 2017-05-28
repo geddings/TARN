@@ -1,4 +1,4 @@
-package net.floodlightcontroller.randomizer;
+package net.floodlightcontroller.tarn;
 
 import net.floodlightcontroller.test.FloodlightTestCase;
 import org.junit.Before;

@@ -10,6 +10,6 @@
   <logger name="io" level="INFO"/> <!-- Netty logging -->
   <logger name="LogService" level="WARN"/> <!-- Restlet access logging -->
   <logger name="net.floodlightcontroller" level="INFO"/>
-  <logger name="net.floodlightcontroller.randomizer" level="DEBUG"/>
+  <logger name="net.floodlightcontroller.tarn" level="DEBUG"/>
   <logger name="org.sdnplatform" level="INFO"/>
 </configuration>

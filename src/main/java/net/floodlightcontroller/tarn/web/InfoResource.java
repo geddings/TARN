@@ -1,7 +1,7 @@
-package net.floodlightcontroller.randomizer.web;
+package net.floodlightcontroller.tarn.web;
 
-import net.floodlightcontroller.randomizer.IRandomizerService;
-import net.floodlightcontroller.randomizer.RandomizedHost;
+import net.floodlightcontroller.tarn.IRandomizerService;
+import net.floodlightcontroller.tarn.RandomizedHost;
 import org.restlet.resource.Get;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

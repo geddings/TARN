@@ -1,4 +1,4 @@
-package net.floodlightcontroller.randomizer;
+package net.floodlightcontroller.tarn;
 
 import net.floodlightcontroller.core.IFloodlightProviderService;
 import net.floodlightcontroller.core.IOFSwitch;

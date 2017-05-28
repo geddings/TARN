@@ -1,11 +1,11 @@
-package net.floodlightcontroller.randomizer.web;
+package net.floodlightcontroller.tarn.web;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
-import net.floodlightcontroller.randomizer.IRandomizerService;
-import net.floodlightcontroller.randomizer.RandomizedHost;
+import net.floodlightcontroller.tarn.IRandomizerService;
+import net.floodlightcontroller.tarn.RandomizedHost;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 import org.restlet.resource.Get;

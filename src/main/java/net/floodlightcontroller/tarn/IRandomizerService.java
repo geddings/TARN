@@ -1,4 +1,4 @@
-package net.floodlightcontroller.randomizer;
+package net.floodlightcontroller.tarn;
 
 import net.floodlightcontroller.core.module.IFloodlightService;
 import org.projectfloodlight.openflow.types.IPv4Address;

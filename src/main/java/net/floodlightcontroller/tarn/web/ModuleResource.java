@@ -1,7 +1,7 @@
-package net.floodlightcontroller.randomizer.web;
+package net.floodlightcontroller.tarn.web;
 
-import net.floodlightcontroller.randomizer.IRandomizerService;
-import net.floodlightcontroller.randomizer.IRandomizerService.RandomizerReturnCode;
+import net.floodlightcontroller.tarn.IRandomizerService;
+import net.floodlightcontroller.tarn.IRandomizerService.RandomizerReturnCode;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.Put;

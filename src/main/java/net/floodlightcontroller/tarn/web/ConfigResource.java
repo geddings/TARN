@@ -1,11 +1,11 @@
-package net.floodlightcontroller.randomizer.web;
+package net.floodlightcontroller.tarn.web;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
-import net.floodlightcontroller.randomizer.IRandomizerService;
-import net.floodlightcontroller.randomizer.IRandomizerService.RandomizerReturnCode;
+import net.floodlightcontroller.tarn.IRandomizerService;
+import net.floodlightcontroller.tarn.IRandomizerService.RandomizerReturnCode;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.Put;
@@ -148,7 +148,7 @@ public class ConfigResource extends ServerResource {
                         try {
                             ret.put(STR_SETTING_RANDOMIZE, Boolean.parseBoolean(value));
                         } catch (IllegalArgumentException e) {
-                            log.error("Invalid randomizer {}", value);
+                            log.error("Invalid tarn {}", value);
                             ret.put(STR_INVALID_VALUE, "Invalid value '" + value + "' for key '" + key + "'");
                         }
                         break;

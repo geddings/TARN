@@ -1,9 +1,9 @@
-package net.floodlightcontroller.randomizer;
+package net.floodlightcontroller.tarn;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.core.internal.IOFSwitchService;
-import net.floodlightcontroller.randomizer.web.ConnectionSerializer;
+import net.floodlightcontroller.tarn.web.ConnectionSerializer;
 import org.projectfloodlight.openflow.protocol.OFFlowMod;
 import org.projectfloodlight.openflow.types.DatapathId;
 import org.slf4j.Logger;

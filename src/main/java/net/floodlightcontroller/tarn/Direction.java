@@ -1,4 +1,4 @@
-package net.floodlightcontroller.randomizer;
+package net.floodlightcontroller.tarn;
 
 /**
  * Created by geddingsbarrineau on 4/15/17.

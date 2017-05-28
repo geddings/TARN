@@ -1,4 +1,4 @@
-package net.floodlightcontroller.randomizer;
+package net.floodlightcontroller.tarn;
 
 import ch.qos.logback.classic.Level;
 import net.floodlightcontroller.core.*;
@@ -13,7 +13,7 @@ import net.floodlightcontroller.linkdiscovery.internal.LinkDiscoveryManager;
 import net.floodlightcontroller.packet.ARP;
 import net.floodlightcontroller.packet.Ethernet;
 import net.floodlightcontroller.packet.IPv4;
-import net.floodlightcontroller.randomizer.web.RandomizerWebRoutable;
+import net.floodlightcontroller.tarn.web.RandomizerWebRoutable;
 import net.floodlightcontroller.restserver.IRestApiService;
 import org.projectfloodlight.openflow.protocol.*;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.Collectors;
 
 import static org.quartz.DateBuilder.evenMinuteDateAfterNow;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
@@ -36,11 +35,10 @@ import static org.quartz.TriggerBuilder.newTrigger;
  * <p>
  * This is the Randomizer Floodlight module.
  */
-public class Randomizer implements IOFMessageListener, IOFSwitchListener, IFloodlightModule, IRandomizerService {
+public class Randomizer implements IOFSwitchListener, IFloodlightModule, IRandomizerService {
 
     //================================================================================
     //region Properties
-    private ScheduledExecutorService executorService;
     private IFloodlightProviderService floodlightProvider;
     private IRestApiService restApiService;
     protected static IOFSwitchService switchService;
@@ -267,97 +265,97 @@ public class Randomizer implements IOFMessageListener, IOFSwitchListener, IFlood
 
     //================================================================================
     //region IOFMessageListener Implementation
-    @Override
-    public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
-        /*
-         * If we're disabled, then just stop now
-		 * and let Forwarding/Hub handle the connection.
-		 */
-        if (!enabled) {
-            log.trace("Randomizer disabled. Not acting on packet; passing to next module.");
-            return Command.CONTINUE;
-        } else {
-            log.trace("Randomizer enabled. Inspecting packet to see if it's a candidate for randomization.");
-        }
-        
-        OFPacketIn pi = (OFPacketIn) msg;
-        OFPort inPort = (pi.getVersion().compareTo(OFVersion.OF_12) < 0 ? pi.getInPort() : pi.getMatch().get(MatchField.IN_PORT));
-        Ethernet l2 = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
-
-        if (packetBelongsToExistingConnection(l2)) {
-            log.error("Packet belongs to an existing connection: {}", l2);
-            return Command.STOP;
-        }
-        
-        Connection connection = createConnectionFromPacket(l2, sw, inPort);
-        
-        if (connection != null) {
-            log.info("New connection added: {}", connection);
-            connections.add(connection);
-            return Command.STOP;
-        }
-        
-        return Command.CONTINUE;
-    }
-
-    private boolean packetBelongsToExistingConnection(Ethernet l2) {
-        EthType ethType = l2.getEtherType();
-        Connection connection = createConnectionFromPacket(l2, null, null);
-
-        for (Connection c : connections) {
-            if (c.equals(connection)) return true;
-        }
-
-        return false;
-    }
-
-    private Connection createConnectionFromPacket(Ethernet l2, IOFSwitch sw, OFPort inPort) {
-        EthType ethType = l2.getEtherType();
-        IHost source = null;
-        IHost destination = null;
-        Direction direction = null;
-
-        if (inPort != null) direction = inPort.equals(wanport)
-                ? Direction.INCOMING
-                : Direction.OUTGOING;
-
-        if (ethType == EthType.IPv4) {
-            IPv4 l3 = (IPv4) l2.getPayload();
-            source = hostManager.getServer(l3.getSourceAddress());
-            destination = hostManager.getServer(l3.getDestinationAddress());
-        } else if (l2.getEtherType() == EthType.ARP) {
-            ARP arp = (ARP) l2.getPayload();
-            source = hostManager.getServer(arp.getSenderProtocolAddress());
-            destination = hostManager.getServer(arp.getTargetProtocolAddress());
-        }
-
-        if (source == null || destination == null) {
-            return null;
-        } else {
-            return new Connection(source, destination, direction, sw.getId(), switchService);
-        }
-    }
-
-
-    @Override
-    public String getName() {
-        return Randomizer.class.getSimpleName();
-    }
-
-    @Override
-    public boolean isCallbackOrderingPrereq(OFType type, String name) {
-        return false;
-    }
-
-    @Override
-    public boolean isCallbackOrderingPostreq(OFType type, String name) {
-        if (type.equals(OFType.PACKET_IN) && (name.equals("forwarding"))) {
-            log.trace("Randomizer is telling Forwarding to run later.");
-            return true;
-        } else {
-            return false;
-        }
-    }
+//    @Override
+//    public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
+//        /*
+//         * If we're disabled, then just stop now
+//		 * and let Forwarding/Hub handle the connection.
+//		 */
+//        if (!enabled) {
+//            log.trace("Randomizer disabled. Not acting on packet; passing to next module.");
+//            return Command.CONTINUE;
+//        } else {
+//            log.trace("Randomizer enabled. Inspecting packet to see if it's a candidate for randomization.");
+//        }
+//
+//        OFPacketIn pi = (OFPacketIn) msg;
+//        OFPort inPort = (pi.getVersion().compareTo(OFVersion.OF_12) < 0 ? pi.getInPort() : pi.getMatch().get(MatchField.IN_PORT));
+//        Ethernet l2 = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
+//
+//        if (packetBelongsToExistingConnection(l2)) {
+//            log.error("Packet belongs to an existing connection: {}", l2);
+//            return Command.STOP;
+//        }
+//
+//        Connection connection = createConnectionFromPacket(l2, sw, inPort);
+//
+//        if (connection != null) {
+//            log.info("New connection added: {}", connection);
+//            connections.add(connection);
+//            return Command.STOP;
+//        }
+//
+//        return Command.CONTINUE;
+//    }
+//
+//    private boolean packetBelongsToExistingConnection(Ethernet l2) {
+//        EthType ethType = l2.getEtherType();
+//        Connection connection = createConnectionFromPacket(l2, null, null);
+//
+//        for (Connection c : connections) {
+//            if (c.equals(connection)) return true;
+//        }
+//
+//        return false;
+//    }
+//
+//    private Connection createConnectionFromPacket(Ethernet l2, IOFSwitch sw, OFPort inPort) {
+//        EthType ethType = l2.getEtherType();
+//        IHost source = null;
+//        IHost destination = null;
+//        Direction direction = null;
+//
+//        if (inPort != null) direction = inPort.equals(wanport)
+//                ? Direction.INCOMING
+//                : Direction.OUTGOING;
+//
+//        if (ethType == EthType.IPv4) {
+//            IPv4 l3 = (IPv4) l2.getPayload();
+//            source = hostManager.getServer(l3.getSourceAddress());
+//            destination = hostManager.getServer(l3.getDestinationAddress());
+//        } else if (l2.getEtherType() == EthType.ARP) {
+//            ARP arp = (ARP) l2.getPayload();
+//            source = hostManager.getServer(arp.getSenderProtocolAddress());
+//            destination = hostManager.getServer(arp.getTargetProtocolAddress());
+//        }
+//
+//        if (source == null || destination == null) {
+//            return null;
+//        } else {
+//            return new Connection(source, destination, direction, sw.getId(), switchService);
+//        }
+//    }
+//
+//
+//    @Override
+//    public String getName() {
+//        return Randomizer.class.getSimpleName();
+//    }
+//
+//    @Override
+//    public boolean isCallbackOrderingPrereq(OFType type, String name) {
+//        return false;
+//    }
+//
+//    @Override
+//    public boolean isCallbackOrderingPostreq(OFType type, String name) {
+//        if (type.equals(OFType.PACKET_IN) && (name.equals("forwarding"))) {
+//            log.trace("Randomizer is telling Forwarding to run later.");
+//            return true;
+//        } else {
+//            return false;
+//        }
+//    }
     //endregion
     //================================================================================
 
@@ -389,7 +387,6 @@ public class Randomizer implements IOFMessageListener, IOFSwitchListener, IFlood
 
     @Override
     public void init(FloodlightModuleContext context) throws FloodlightModuleException {
-        executorService = Executors.newScheduledThreadPool(2);
         floodlightProvider = context.getServiceImpl(IFloodlightProviderService.class);
         restApiService = context.getServiceImpl(IRestApiService.class);
         switchService = context.getServiceImpl(IOFSwitchService.class);
@@ -413,7 +410,7 @@ public class Randomizer implements IOFMessageListener, IOFSwitchListener, IFlood
 
     @Override
     public void startUp(FloodlightModuleContext context) throws FloodlightModuleException {
-        floodlightProvider.addOFMessageListener(OFType.PACKET_IN, this);
+        //floodlightProvider.addOFMessageListener(OFType.PACKET_IN, this);
         switchService.addOFSwitchListener(this);
         restApiService.addRestletRoutable(new RandomizerWebRoutable());
 

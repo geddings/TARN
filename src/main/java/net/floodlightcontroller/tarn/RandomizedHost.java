@@ -1,7 +1,7 @@
-package net.floodlightcontroller.randomizer;
+package net.floodlightcontroller.tarn;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import net.floodlightcontroller.randomizer.web.RandomizedHostSerializer;
+import net.floodlightcontroller.tarn.web.RandomizedHostSerializer;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 import org.slf4j.Logger;

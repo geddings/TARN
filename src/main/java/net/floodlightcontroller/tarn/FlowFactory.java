@@ -39,10 +39,10 @@ public class FlowFactory {
     private static final TableId SOURCE_REWRITE_TABLE = TableId.of(0);
     private static final TableId DESTINATION_REWRITE_TABLE = TableId.of(1);
     private static final TableId FINAL_TABLE = TableId.of(1);
-    private static final OFPort WAN_PORT = OFPort.of(1);
-    private static final OFPort LAN_PORT = OFPort.of(2);
-    private static final int HARD_TIMEOUT = 30;
-    private static final int IDLE_TIMEOUT = 30;
+    private static final OFPort WAN_PORT = OFPort.of(2);
+    private static final OFPort LAN_PORT = OFPort.of(1);
+    private static final int HARD_TIMEOUT = 6;
+    private static final int IDLE_TIMEOUT = 6;
     private static final int FLOW_PRIORITY = 32768;
 
 
@@ -152,24 +152,13 @@ public class FlowFactory {
             instructions.add(getApplyActionsInstruction(rewriteActions.get(attr)));
             if (!table.equals(FINAL_TABLE)) {
                 instructions.add(getTableInstruction(TableId.of(table.getValue() + 1)));
-
             }
             fab.setInstructions(instructions);
             return fab.build();
         }
 
         OFInstruction getApplyActionsInstruction(List<OFAction> actions) {
-            IPv4AddressWithMask external = IPv4AddressWithMask.of("20.0.0.0/24");
-            OFOxms oxms = factory.oxms();
-            OFOxm oxm = oxms.buildIpv4SrcMasked().setValue(external.getValue()).setMask(external.getMask()).build();
-            //OFOxm oxm = oxms.buildIpv4Src().setValue(external.getValue()).build();
-            List<OFAction> actionList = new ArrayList<>();
-            actionList.add(factory.actions()
-                    .buildSetField()
-                    .setField(oxm)
-                    .build());
-            return factory.instructions().buildApplyActions().setActions(actionList).build();
-            //return factory.instructions().buildApplyActions().setActions(actions).build();
+            return factory.instructions().buildApplyActions().setActions(actions).build();
         }
 
         OFInstruction getTableInstruction(TableId tableId) {
@@ -199,9 +188,11 @@ public class FlowFactory {
         private void initMatch(EthType ethType, RewriteField field, RewriteAction action,
                                MatchField<IPv4Address> matchField, IPv4AddressWithMask value) {
             RewriteAttributes attr = RewriteAttributes.of(ethType, field, action);
+            OFPort port = (attr.action == RewriteAction.ENCRYPT) ? LAN_PORT : WAN_PORT;
             matches.put(attr, factory.buildMatch()
+                    .setExact(MatchField.IN_PORT, port)
                     .setExact(MatchField.ETH_TYPE, attr.ethType)
-                    .setExact(matchField, value.getValue())
+                    .setMasked(matchField, value)
                     .build());
         }
 
@@ -215,26 +206,26 @@ public class FlowFactory {
 
         RewriteActions(IPv4AddressWithMask internal, IPv4AddressWithMask external) {
             OFOxms oxms = factory.oxms();
-//            initAction(EthType.IPv4, RewriteField.SOURCE, RewriteAction.ENCRYPT,
-//                    oxms.buildIpv4SrcMasked().setValue(external.getValue()).setMask(external.getMask()).build());
-//            initAction(EthType.IPv4, RewriteField.SOURCE, RewriteAction.DECRYPT,
-//                    oxms.buildIpv4SrcMasked().setValue(internal.getValue()).setMask(internal.getMask()).build());
-//
-//            initAction(EthType.IPv4, RewriteField.DESTINATION, RewriteAction.DECRYPT,
-//                    oxms.ipv4DstMasked(internal.getValue(), internal.getMask()));
-//            initAction(EthType.IPv4, RewriteField.DESTINATION, RewriteAction.ENCRYPT,
-//                    oxms.ipv4DstMasked(external.getValue(), external.getMask()));
-//
-//
-//            initAction(EthType.ARP, RewriteField.SOURCE, RewriteAction.ENCRYPT,
-//                    oxms.arpSpaMasked(external.getValue(), external.getMask()));
-//            initAction(EthType.ARP, RewriteField.SOURCE, RewriteAction.DECRYPT,
-//                    oxms.arpSpaMasked(internal.getValue(), internal.getMask()));
-//
-//            initAction(EthType.ARP, RewriteField.DESTINATION, RewriteAction.DECRYPT,
-//                    oxms.arpTpaMasked(internal.getValue(), internal.getMask()));
-//            initAction(EthType.ARP, RewriteField.DESTINATION, RewriteAction.ENCRYPT,
-//                    oxms.arpTpaMasked(external.getValue(), external.getMask()));
+            initAction(EthType.IPv4, RewriteField.SOURCE, RewriteAction.ENCRYPT,
+                    oxms.buildIpv4SrcMasked().setValue(external.getValue()).setMask(external.getMask()).build());
+            initAction(EthType.IPv4, RewriteField.SOURCE, RewriteAction.DECRYPT,
+                    oxms.buildIpv4SrcMasked().setValue(internal.getValue()).setMask(internal.getMask()).build());
+
+            initAction(EthType.IPv4, RewriteField.DESTINATION, RewriteAction.DECRYPT,
+                    oxms.ipv4DstMasked(internal.getValue(), internal.getMask()));
+            initAction(EthType.IPv4, RewriteField.DESTINATION, RewriteAction.ENCRYPT,
+                    oxms.ipv4DstMasked(external.getValue(), external.getMask()));
+
+
+            initAction(EthType.ARP, RewriteField.SOURCE, RewriteAction.ENCRYPT,
+                    oxms.arpSpaMasked(external.getValue(), external.getMask()));
+            initAction(EthType.ARP, RewriteField.SOURCE, RewriteAction.DECRYPT,
+                    oxms.arpSpaMasked(internal.getValue(), internal.getMask()));
+
+            initAction(EthType.ARP, RewriteField.DESTINATION, RewriteAction.DECRYPT,
+                    oxms.arpTpaMasked(internal.getValue(), internal.getMask()));
+            initAction(EthType.ARP, RewriteField.DESTINATION, RewriteAction.ENCRYPT,
+                    oxms.arpTpaMasked(external.getValue(), external.getMask()));
         }
 
         private void initAction(EthType ethType, RewriteField field, RewriteAction action,

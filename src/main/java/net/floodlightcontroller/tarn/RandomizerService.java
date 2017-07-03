@@ -104,9 +104,10 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService 
         as1.addPrefix(IPv4AddressWithMask.of("30.0.0.0/24"));
         randomizer.addASNetwork(as1);
 
-//        ASNetwork as2 = new ASNetwork(2, IPv4AddressWithMask.of("70.0.0.0/24"));
-//        as2.addPrefix(IPv4AddressWithMask.of("80.0.0.0/24"));
-//        as2.addPrefix(IPv4AddressWithMask.of("90.0.0.0/24"));
+        ASNetwork as2 = new ASNetwork(2, IPv4AddressWithMask.of("40.0.0.0/24"));
+        as2.addPrefix(IPv4AddressWithMask.of("50.0.0.0/24"));
+        as2.addPrefix(IPv4AddressWithMask.of("60.0.0.0/24"));
+        randomizer.addASNetwork(as2);
     }
 
     private void parseConfigOptions(Map<String, String> configOptions) {

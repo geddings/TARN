@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import net.floodlightcontroller.tarn.IRandomizerService;
-import net.floodlightcontroller.tarn.IRandomizerService.RandomizerReturnCode;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.Put;
@@ -29,75 +28,75 @@ public class ConfigResource extends ServerResource {
     protected static final String STR_INVALID_KEY = "invalid-key";
     protected static final String STR_INVALID_VALUE = "invalid-value";
 
-    @Get
-    public Map<String, String> getConfiguration() {
-        IRandomizerService randomizerService = (IRandomizerService) getContext().getAttributes().get(IRandomizerService.class.getCanonicalName());
-
-        Map<String, String> ret = new HashMap<String, String>();
-        ret.put(STR_SETTING_RANDOMIZE, Boolean.toString(randomizerService.isRandom()));
-        ret.put(STR_SETTING_LOCALPORT, randomizerService.getLanPort().toString());
-        ret.put(STR_SETTING_WANPORT, randomizerService.getWanPort().toString());
-        return ret;
-    }
-
-    @Put
-    @Post
-    public Map<String, String> handleConfig(String json) {
-        IRandomizerService randomizerService = (IRandomizerService) getContext().getAttributes().get(IRandomizerService.class.getCanonicalName());
-        Map<String, String> ret = new HashMap<String, String>();
-        Map<String, Object> config = parseConfigFromJson(json);
-
-        for (String key : config.keySet()) {
-            RandomizerReturnCode rc;
-            switch (key) {
-                case STR_SETTING_RANDOMIZE:
-                    rc = randomizerService.setRandom((Boolean) config.get(key));
-                    switch (rc) {
-                        case CONFIG_SET:
-                            ret.put(Code.CODE, Code.OKAY);
-                            ret.put(Code.MESSAGE, "Randomize set to " + config.get(key));
-                            break;
-                        default:
-                            ret.put(Code.CODE, Code.ERR_BAD_ERR_CODE);
-                            ret.put(Code.MESSAGE, "Error: Unexpected error code " + rc.toString());
-                            break;
-                    }
-                    break;
-                case STR_SETTING_LOCALPORT:
-                    rc = randomizerService.setLanPort((Integer) config.get(key));
-                    switch (rc) {
-                        case CONFIG_SET:
-                            ret.put(Code.CODE, Code.OKAY);
-                            ret.put(Code.MESSAGE, "Local port set to " + config.get(key));
-                            break;
-                        default:
-                            ret.put(Code.CODE, Code.ERR_BAD_ERR_CODE);
-                            ret.put(Code.MESSAGE, "Error: Unexpected error code " + rc.toString());
-                            break;
-                    }
-                    break;
-                case STR_SETTING_WANPORT:
-                    rc = randomizerService.setWanPort((Integer) config.get(key));
-                    switch (rc) {
-                        case CONFIG_SET:
-                            ret.put(Code.CODE, Code.OKAY);
-                            ret.put(Code.MESSAGE, "Wan port set to " + config.get(key));
-                            break;
-                        default:
-                            ret.put(Code.CODE, Code.ERR_BAD_ERR_CODE);
-                            ret.put(Code.MESSAGE, "Error: Unexpected error code " + rc.toString());
-                            break;
-                    }
-                    break;
-                case STR_INVALID_KEY:
-                case STR_INVALID_VALUE:
-                    ret.put(key, (String) config.get(key));
-                    break;
-            }
-        }
-
-        return ret;
-    }
+//    @Get
+//    public Map<String, String> getConfiguration() {
+//        IRandomizerService randomizerService = (IRandomizerService) getContext().getAttributes().get(IRandomizerService.class.getCanonicalName());
+//
+//        Map<String, String> ret = new HashMap<String, String>();
+//        ret.put(STR_SETTING_RANDOMIZE, Boolean.toString(randomizerService.isRandom()));
+//        ret.put(STR_SETTING_LOCALPORT, randomizerService.getLanPort().toString());
+//        ret.put(STR_SETTING_WANPORT, randomizerService.getWanPort().toString());
+//        return ret;
+//    }
+//
+//    @Put
+//    @Post
+//    public Map<String, String> handleConfig(String json) {
+//        IRandomizerService randomizerService = (IRandomizerService) getContext().getAttributes().get(IRandomizerService.class.getCanonicalName());
+//        Map<String, String> ret = new HashMap<String, String>();
+//        Map<String, Object> config = parseConfigFromJson(json);
+//
+//        for (String key : config.keySet()) {
+//            RandomizerReturnCode rc;
+//            switch (key) {
+//                case STR_SETTING_RANDOMIZE:
+//                    rc = randomizerService.setRandom((Boolean) config.get(key));
+//                    switch (rc) {
+//                        case CONFIG_SET:
+//                            ret.put(Code.CODE, Code.OKAY);
+//                            ret.put(Code.MESSAGE, "Randomize set to " + config.get(key));
+//                            break;
+//                        default:
+//                            ret.put(Code.CODE, Code.ERR_BAD_ERR_CODE);
+//                            ret.put(Code.MESSAGE, "Error: Unexpected error code " + rc.toString());
+//                            break;
+//                    }
+//                    break;
+//                case STR_SETTING_LOCALPORT:
+//                    rc = randomizerService.setLanPort((Integer) config.get(key));
+//                    switch (rc) {
+//                        case CONFIG_SET:
+//                            ret.put(Code.CODE, Code.OKAY);
+//                            ret.put(Code.MESSAGE, "Local port set to " + config.get(key));
+//                            break;
+//                        default:
+//                            ret.put(Code.CODE, Code.ERR_BAD_ERR_CODE);
+//                            ret.put(Code.MESSAGE, "Error: Unexpected error code " + rc.toString());
+//                            break;
+//                    }
+//                    break;
+//                case STR_SETTING_WANPORT:
+//                    rc = randomizerService.setWanPort((Integer) config.get(key));
+//                    switch (rc) {
+//                        case CONFIG_SET:
+//                            ret.put(Code.CODE, Code.OKAY);
+//                            ret.put(Code.MESSAGE, "Wan port set to " + config.get(key));
+//                            break;
+//                        default:
+//                            ret.put(Code.CODE, Code.ERR_BAD_ERR_CODE);
+//                            ret.put(Code.MESSAGE, "Error: Unexpected error code " + rc.toString());
+//                            break;
+//                    }
+//                    break;
+//                case STR_INVALID_KEY:
+//                case STR_INVALID_VALUE:
+//                    ret.put(key, (String) config.get(key));
+//                    break;
+//            }
+//        }
+//
+//        return ret;
+//    }
 
     /**
      * Expect JSON (any of):

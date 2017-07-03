@@ -73,6 +73,7 @@ public class FlowFactory {
             if (iofSwitch != null) {
                 factory = iofSwitch.getOFFactory();
                 RewriteFlows prf = new PrefixRewriteFlows(internal, external);
+                log.info("{}", prf.getFlows());
                 iofSwitch.write(prf.getFlows());
             } else {
                 log.error("Switch object not found. Prefix flows will not be inserted");

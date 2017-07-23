@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: net.floodlightcontroller.storage.memory.tests.MemoryStorageTest
--------------------------------------------------------------------------------
-Tests run: 29, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.198 sec

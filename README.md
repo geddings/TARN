@@ -1,4 +1,4 @@
-TARN: Towards a Traffic Analysis Resistant Network
+![TARN](docs/TARNLogo.png) 
 ====================================
 
 Installation

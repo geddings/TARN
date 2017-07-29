@@ -6,8 +6,8 @@ dist: trusty
 
 install:
   - ./.travis/install_dependencies
-  - ./.travis/install_ovs
-  - ./.travis/start_ovs
+  - sudo ./.travis/install_ovs
+  - sudo ./.travis/start_ovs
   - ./.travis/install_mininet
   - ./.travis/install_mininext
 

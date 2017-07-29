@@ -13,5 +13,9 @@ install:
 
 script: sudo python ./mininet/topologies/simplenobgptopo.py
 
+cache:
+  directories:
+    - ./openvswitch
+
 notifications:
   email: false

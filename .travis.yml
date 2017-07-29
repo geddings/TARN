@@ -2,9 +2,9 @@ language: java
 sudo: enabled
 dist: trusty
 install:
-  - ./setup/install_dependencies
-  - ./setup/install_ovs
-  - ./setup/start_ovs
-  - ./setup/install_mininet
-  - ./setup/install_mininext
-  - ./setup/cleanup
+  - sudo ./setup/install_dependencies
+  - sudo ./setup/install_ovs
+  - sudo ./setup/start_ovs
+  - sudo ./setup/install_mininet
+  - sudo ./setup/install_mininext
+  - sudo ./setup/cleanup

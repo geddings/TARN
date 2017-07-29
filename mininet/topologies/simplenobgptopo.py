@@ -9,10 +9,11 @@ from mininet.net import Mininet
 from mininet.node import OVSSwitch
 from mininet.topo import Topo
 
-sys.path.insert(0, os.path.abspath('/home/vagrant/TARN/mininet'))
+HOME_FOLDER = os.getenv('HOME')
+sys.path.insert(0, os.path.abspath(HOME_FOLDER + '/TARN/mininet'))
 import nodes
 
-LOG_PATH = '/home/vagrant/TARN/logs/'
+LOG_PATH = HOME_FOLDER + '/TARN/logs/'
 
 class SimpleNoBGPTopo(Topo):
     def __init__(self):

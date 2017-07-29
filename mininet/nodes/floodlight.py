@@ -2,7 +2,7 @@ import httplib
 import json
 import shutil
 import subprocess
-from os import chdir
+from os import chdir, os
 from os import listdir
 from os import makedirs
 from os import path
@@ -45,7 +45,8 @@ class Floodlight(Controller):
     #     print 'Something went wrong when looking for Floodlight!'
     #     exit()
 
-    fl_root_dir = '/home/vagrant/TARN/floodlight'
+    HOME_FOLDER = os.getenv('HOME')
+    fl_root_dir = HOME_FOLDER + '/TARN/floodlight'
 
     def __init__(self, name,
                  command='java -jar ' + fl_root_dir + '/target/floodlight.jar',

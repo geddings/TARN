@@ -1,10 +1,16 @@
 language: java
+
 sudo: enabled
+
 dist: trusty
+
 install:
-  - sudo ./setup/install_dependencies
-  - sudo ./setup/install_ovs
-  - sudo ./setup/start_ovs
-  - sudo ./setup/install_mininet
-  - sudo ./setup/install_mininext
-  - sudo ./setup/cleanup
+  - .travis/install_dependencies
+  - .travis/install_ovs
+  - .travis/start_ovs
+  - .travis/install_mininet
+  - .travis/install_mininext
+  - .travis/cleanup
+
+notifications:
+  email: false

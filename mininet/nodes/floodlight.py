@@ -1,19 +1,16 @@
+import httplib
+import json
 import shutil
 import subprocess
 from os import chdir
+from os import listdir
 from os import makedirs
 from os import path
-from os import listdir
-from subprocess import check_output
 
 import jprops
 import mininet.log as log
 from mininet.moduledeps import pathCheck
 from mininet.node import Controller
-from pick import pick
-
-import httplib
-import json
 
 
 class Floodlight(Controller):
@@ -48,7 +45,7 @@ class Floodlight(Controller):
     #     print 'Something went wrong when looking for Floodlight!'
     #     exit()
 
-    fl_root_dir = '/home/vagrant/TARN'
+    fl_root_dir = '/home/vagrant/TARN/floodlight'
 
     def __init__(self, name,
                  command='java -jar ' + fl_root_dir + '/target/floodlight.jar',
@@ -257,4 +254,4 @@ def installFloodlight():
 
 
 if __name__ == "__main__":
-    log.setLogLevel('debug')
+    log.setLogLevel('info')

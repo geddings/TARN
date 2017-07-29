@@ -1,17 +1,18 @@
 #!/usr/bin/python
 import os
+import subprocess
 import sys
-from functools import partial
+import time
 
 import mininet.log as log
-from mininet.cli import CLI
 from mininet.net import Mininet
 from mininet.node import OVSSwitch
 from mininet.topo import Topo
 
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('/home/vagrant/TARN/mininet'))
 import nodes
 
+LOG_PATH = '/home/vagrant/TARN/logs/'
 
 class SimpleNoBGPTopo(Topo):
     def __init__(self):
@@ -26,7 +27,7 @@ class SimpleNoBGPTopo(Topo):
 
 
 if __name__ == '__main__':
-    log.setLogLevel('debug')
+    log.setLogLevel('info')
     net = Mininet(topo=SimpleNoBGPTopo(), build=False)
     # c1 = net.addController(name='c1', controller=RemoteController, ip='130.127.39.221', port=6653)  #nodes.Floodlight)
     c1 = net.addController(name='c1', controller=nodes.Floodlight)
@@ -40,5 +41,11 @@ if __name__ == '__main__':
     s2.cmd('ovs-vsctl set bridge s2 protocols=OpenFlow15')
     for controller in net.controllers:
         controller.start()
-    CLI(net)
+    h1 = net.getNodeByName('h1')
+    h2 = net.getNodeByName('h2')
+    h1.sendCmd('ping -c 10 -i 1 ' + h2.IP() + ' > ' + LOG_PATH + 'h1.log')
+    h2.sendCmd('ping -c 10 -i 1 ' + h1.IP() + ' > ' + LOG_PATH + 'h2.log')
+    time.sleep(10)
+    for sw in net.switches:
+        subprocess.call('ovs-ofctl dump-flows ' + sw.name + ' -O openflow15 > ' + LOG_PATH + sw.name + '.log', shell=True)
     net.stop()

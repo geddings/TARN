@@ -1,8 +1,9 @@
 import httplib
 import json
+import os
 import shutil
 import subprocess
-from os import chdir, os
+from os import chdir
 from os import listdir
 from os import makedirs
 from os import path

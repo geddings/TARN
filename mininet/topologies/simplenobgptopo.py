@@ -10,10 +10,12 @@ from mininet.node import OVSSwitch
 from mininet.topo import Topo
 
 HOME_FOLDER = os.getenv('HOME')
-sys.path.insert(0, os.path.abspath(HOME_FOLDER + '/TARN/mininet'))
-import nodes
+
+sys.path.append(HOME_FOLDER + '/TARN/mininet')
+from nodes import Floodlight
 
 LOG_PATH = HOME_FOLDER + '/TARN/logs/'
+
 
 class SimpleNoBGPTopo(Topo):
     def __init__(self):
@@ -31,8 +33,8 @@ if __name__ == '__main__':
     log.setLogLevel('info')
     net = Mininet(topo=SimpleNoBGPTopo(), build=False)
     # c1 = net.addController(name='c1', controller=RemoteController, ip='130.127.39.221', port=6653)  #nodes.Floodlight)
-    c1 = net.addController(name='c1', controller=nodes.Floodlight)
-    c2 = net.addController(name='c2', controller=nodes.Floodlight)
+    c1 = net.addController(name='c1', controller=Floodlight)
+    c2 = net.addController(name='c2', controller=Floodlight)
     net.build()
     s1 = net.getNodeByName('s1')
     s1.start([c1])
@@ -48,5 +50,6 @@ if __name__ == '__main__':
     h2.sendCmd('ping -c 10 -i 1 ' + h1.IP() + ' > ' + LOG_PATH + 'h2.log')
     time.sleep(10)
     for sw in net.switches:
-        subprocess.call('ovs-ofctl dump-flows ' + sw.name + ' -O openflow15 > ' + LOG_PATH + sw.name + '.log', shell=True)
+        subprocess.call('ovs-ofctl dump-flows ' + sw.name + ' -O openflow15 > ' + LOG_PATH + sw.name + '.log',
+                        shell=True)
     net.stop()

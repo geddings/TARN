@@ -1,24 +1,22 @@
 import os
 import sys
-import atexit
 
 import mininet.util
 import mininext.util
+
 mininet.util.isShellBuiltin = mininext.util.isShellBuiltin
 sys.modules['mininet.util'] = mininet.util
 
 sys.path.insert(0, os.path.abspath('../..'))
-from nodes.floodlight import Floodlight
+from nodes.Floodlight import Floodlight
 from nodes.bgp_router_cntl import BGPRTCntl
 
 from mininet.log import setLogLevel, info
-from mininet.net import Mininet
 from mininext.cli import CLI
 
 from topo import QuaggaTopo
 
 from mininext.net import MiniNExT
-from mininet.node import OVSController
 
 
 # def addController():

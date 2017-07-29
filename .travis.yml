@@ -11,5 +11,7 @@ install:
   - ./.travis/install_mininet
   - ./.travis/install_mininext
 
+script: sudo python ./mininet/topologies/simplenobgptopo.py
+
 notifications:
   email: false

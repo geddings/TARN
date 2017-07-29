@@ -4,7 +4,6 @@ import os
 import shutil
 import subprocess
 from os import chdir
-from os import listdir
 from os import makedirs
 from os import path
 
@@ -25,36 +24,13 @@ class Floodlight(Controller):
     # Number of Floodlight instances created. Used for naming purposes.
     controller_number = 0
 
-    def listdir_fullpath(d):
-        return [path.join(d, f) for f in listdir(d)]
-
-    # Check TARN folder path
-    # try:
-    #     fl_options = check_output('sudo find /home/ -type d -name TARN', shell=True)
-    #     # Check to make sure only one TARN folder
-    #     if (fl_options == ''):
-    #         user_title = 'Choose a directory to install Floodlight in: '
-    #         user_options = listdir_fullpath('/home/')
-    #         root_dir, index = pick(user_options, user_title)
-    #         fl_root_dir = root_dir + '/TARN'
-    #         installFloodlight()
-    #     else:
-    #         fl_title = 'Choose which instance of Floodlight you want to run: '
-    #         fl_options = fl_options.split('\n')
-    #         fl_root_dir, index = pick(fl_options, fl_title)
-    # except subprocess.CalledProcessError:
-    #     print 'Something went wrong when looking for Floodlight!'
-    #     exit()
-
-    HOME_FOLDER = os.getenv('HOME')
-    fl_root_dir = HOME_FOLDER + '/TARN/floodlight'
+    fl_root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) + '/floodlight'
 
     def __init__(self, name,
                  command='java -jar ' + fl_root_dir + '/target/floodlight.jar',
                  cargs='',
                  ip='127.0.0.1',
                  **kwargs):
-
         # Increment the number of controller instances for naming purposes.
         Floodlight.controller_number += 1
 
@@ -124,8 +100,8 @@ class Floodlight(Controller):
     def addPrefix(self, ip, mask, server):
         data = {
             "ip-address": ip,
-            "mask": mask,
-            "server": server
+            "mask"      : mask,
+            "server"    : server
         }
         ret = self.rest_call('/wm/randomizer/prefix/add/json', data, 'POST')
         return ret[0] == 200
@@ -133,8 +109,8 @@ class Floodlight(Controller):
     def removePrefix(self, ip, mask, server):
         data = {
             "ip-address": ip,
-            "mask": mask,
-            "server": server
+            "mask"      : mask,
+            "server"    : server
         }
         ret = self.rest_call('/wm/randomizer/prefix/remove/json', data, 'POST')
         return ret[0] == 200
@@ -217,7 +193,7 @@ class Floodlight(Controller):
     def rest_call(self, path, data, action):
         headers = {
             'Content-type': 'application/json',
-            'Accept': 'application/json',
+            'Accept'      : 'application/json',
         }
         body = json.dumps(data)
         conn = httplib.HTTPConnection('127.0.0.1', self.http_port)

@@ -5,12 +5,11 @@ sudo: enabled
 dist: trusty
 
 install:
-  - .travis/install_dependencies
-  - .travis/install_ovs
-  - .travis/start_ovs
-  - .travis/install_mininet
-  - .travis/install_mininext
-  - .travis/cleanup
+  - ./.travis/install_dependencies
+  - ./.travis/install_ovs
+  - ./.travis/start_ovs
+  - ./.travis/install_mininet
+  - ./.travis/install_mininext
 
 notifications:
   email: false

@@ -1,0 +1,10 @@
+language: java
+sudo: enabled
+dist: trusty
+install:
+  - ./setup/install_dependencies
+  - ./setup/install_ovs
+  - ./setup/start_ovs
+  - ./setup/install_mininet
+  - ./setup/install_mininext
+  - ./setup/cleanup

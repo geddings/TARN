@@ -11,11 +11,7 @@ install:
   - ./.travis/install_mininet
   - ./.travis/install_mininext
 
-script: sudo python ./mininet/topologies/simplenobgptopo.py
-
-cache:
-  directories:
-    - ./openvswitch
+script: sudo python ./mininet/simpletest.py
 
 notifications:
   email: false

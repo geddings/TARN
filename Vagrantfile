@@ -3,7 +3,7 @@ Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/trusty64"
 
   config.vm.provider "virtualbox" do |v|
-      v.name = "TARN"
+      v.name = "tarn"
       # v.customize ["modifyvm", :id, "--cpuexecutioncap", "80"]
       v.customize ["modifyvm", :id, "--memory", "2048"]
   end
@@ -28,6 +28,6 @@ Vagrant.configure("2") do |config|
   config.ssh.forward_x11 = true
 
   config.vm.synced_folder "./", "/home/vagrant/" #, id:"mininext", create: true, group: "vagrant", owner: "vagrant" 
-  config.vm.synced_folder "~/Documents/Work/TARN", "/home/vagrant/TARN" #, id:"floodlight", create: true, group: "vagrant", owner: "vagrant" 
+  #config.vm.synced_folder "~/Documents/Work/TARN", "/home/vagrant/TARN" #, id:"floodlight", create: true, group: "vagrant", owner: "vagrant" 
 
 end

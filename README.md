@@ -1,13 +1,20 @@
 ![TARN](docs/TARNLogo.png) 
 ====================================
 
-Installation
----------------
+#Installation
+###Prerequisites
+- [Download and install VirtualBox.](https://www.virtualbox.org)
+- [Download and install Vagrant, a virtual machine environment manager.](https://www.vagrantup.com)
 
-Links
----------------
-[TARN Floodlight module](https://github.com/geddings/TARN/tree/cleanup/src/main/java/net/floodlightcontroller/tarn)
+###Building the environment
+- Clone the TARN project: `git clone http://github.com/geddings/TARN`
+- Change directories: `cd TARN/`
+- Start the Vagrant build process: `vagrant up`
+- Once built, login to the TARN VM using: `vagrant ssh`
+  - _Vagrant may ask you for a password. The default is **vagrant**_
 
-[Run TARN virtually using MiniNExT](https://github.com/OpenFlow-Clemson/EAGERProject)
+#Links
 
-[Run TARN within the PEERING BGP testbed](https://peering.usc.edu)
+**[TARN Floodlight module](https://github.com/geddings/TARN/tree/develop/floodlight/src/main/java/net/floodlightcontroller/tarn)**
+
+**[PEERING BGP testbed](https://peering.usc.edu)**

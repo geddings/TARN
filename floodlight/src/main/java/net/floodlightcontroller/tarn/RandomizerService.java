@@ -1,5 +1,20 @@
 package net.floodlightcontroller.tarn;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
+import org.projectfloodlight.openflow.types.OFPort;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.eventbus.EventBus;
+
 import net.floodlightcontroller.core.internal.IOFSwitchService;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
@@ -8,23 +23,11 @@ import net.floodlightcontroller.core.module.IFloodlightService;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.tarn.web.RandomizerWebRoutable;
 
-import org.projectfloodlight.openflow.types.DatapathId;
-import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
-import org.projectfloodlight.openflow.types.OFPort;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.*;
-
-import com.google.common.eventbus.EventBus;
-
 /**
  * Created by geddingsbarrineau on 6/12/17.
  */
 public class RandomizerService implements IFloodlightModule, IRandomizerService {
     private static final Logger log = LoggerFactory.getLogger(RandomizerService.class);
-
-    private Randomizer randomizer;
 
     private OFPort lanport;
     private OFPort wanport;
@@ -34,19 +37,29 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService 
 
     public static final EventBus eventBus = new EventBus();
 
-    @Override
-    public void addASNetwork(ASNetwork asNetwork) {
+    private List<AutonomousSystem> autonomousSystems;
 
+    @Override
+    public void addAutonomousSystem(AutonomousSystem as) {
+        autonomousSystems.add(as);
     }
 
     @Override
-    public void addASNetwork(int ASNumber, IPv4AddressWithMask internalPrefix) {
-
+    public void addAutonomousSystem(int asnumber, IPv4AddressWithMask internalPrefix) {
+        autonomousSystems.add(new AutonomousSystem(asnumber, internalPrefix));
     }
 
     @Override
-    public void removeASNetwork(int ASNumber) {
+    public void removeAutonomousSystem(int asnumber) {
+        List<AutonomousSystem> toRemove = autonomousSystems.stream()
+                .filter(as -> as.getASNumber() == asnumber)
+                .collect(Collectors.toList());
+        autonomousSystems.removeAll(toRemove);
+    }
 
+    @Override
+    public List<AutonomousSystem> getAutonomousSystems() {
+        return autonomousSystems;
     }
 
     @Override
@@ -78,18 +91,17 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService 
         restApiService = context.getServiceImpl(IRestApiService.class);
         switchService = context.getServiceImpl(IOFSwitchService.class);
 
-        randomizer = new Randomizer(switchService);
-
         /* Create event listeners */
         EventListener eventListener = new EventListener();
 
         /* Register event listeners */
         eventBus.register(eventListener);
+
+        autonomousSystems = new ArrayList<>();
     }
 
     @Override
     public void startUp(FloodlightModuleContext context) throws FloodlightModuleException {
-        switchService.addOFSwitchListener(randomizer);
         restApiService.addRestletRoutable(new RandomizerWebRoutable());
 
         parseConfigOptions(context.getConfigParams(this));
@@ -99,15 +111,15 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService 
 //        FlowFactory.setSwitchService(switchService);
 
         /* Create and configure a few ASes to test with */
-        ASNetwork as1 = new ASNetwork(1, IPv4AddressWithMask.of("10.0.0.0/24"));
+        AutonomousSystem as1 = new AutonomousSystem(1, IPv4AddressWithMask.of("10.0.0.0/24"));
         as1.addPrefix(IPv4AddressWithMask.of("20.0.0.0/24"));
         as1.addPrefix(IPv4AddressWithMask.of("30.0.0.0/24"));
-        randomizer.addASNetwork(as1);
+        autonomousSystems.add(as1);
 
-        ASNetwork as2 = new ASNetwork(2, IPv4AddressWithMask.of("40.0.0.0/24"));
+        AutonomousSystem as2 = new AutonomousSystem(2, IPv4AddressWithMask.of("40.0.0.0/24"));
         as2.addPrefix(IPv4AddressWithMask.of("50.0.0.0/24"));
         as2.addPrefix(IPv4AddressWithMask.of("60.0.0.0/24"));
-        randomizer.addASNetwork(as2);
+        autonomousSystems.add(as2);
     }
 
     private void parseConfigOptions(Map<String, String> configOptions) {

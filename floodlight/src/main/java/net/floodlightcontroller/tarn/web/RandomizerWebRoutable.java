@@ -1,8 +1,9 @@
 package net.floodlightcontroller.tarn.web;
 
-import net.floodlightcontroller.restserver.RestletRoutable;
 import org.restlet.Context;
 import org.restlet.routing.Router;
+
+import net.floodlightcontroller.restserver.RestletRoutable;
 
 /**
  * Created by geddingsbarrineau on 9/19/16.
@@ -21,6 +22,7 @@ public class RandomizerWebRoutable implements RestletRoutable {
         router.attach("/info/json", InfoResource.class);
         router.attach("/connections/json", ConnectionsResource.class);
         router.attach("/prefix/{" + STR_OPERATION + "}/json", PrefixResource.class);
+        router.attach("/as/json", AutonomousSystemsResource.class);
         return router;
     }
 

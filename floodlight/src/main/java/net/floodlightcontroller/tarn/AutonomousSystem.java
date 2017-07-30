@@ -1,7 +1,5 @@
 package net.floodlightcontroller.tarn;
 
-import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,10 +8,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import net.floodlightcontroller.tarn.web.AutonomousSystemSerializer;
+
 /**
  * Created by geddingsbarrineau on 5/28/17.
  */
-public class ASNetwork {
+@JsonSerialize(using = AutonomousSystemSerializer.class)
+public class AutonomousSystem {
 
     private final int ASNumber;
 
@@ -24,7 +29,7 @@ public class ASNetwork {
 
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-    public ASNetwork(int ASNumber, IPv4AddressWithMask internalPrefix) {
+    public AutonomousSystem(int ASNumber, IPv4AddressWithMask internalPrefix) {
         this.ASNumber = ASNumber;
         this.internalPrefix = internalPrefix;
         prefixPool = new ArrayList<>();
@@ -51,6 +56,10 @@ public class ASNetwork {
         return externalPrefix;
     }
 
+    public List<IPv4AddressWithMask> getPrefixPool() {
+        return prefixPool;
+    }
+
     public void addPrefix(IPv4AddressWithMask prefix) {
         if (!prefixPool.contains(prefix)) {
             prefixPool.add(prefix);
@@ -70,9 +79,9 @@ public class ASNetwork {
             return false;
         }
 
-        ASNetwork asNetwork = (ASNetwork) o;
+        AutonomousSystem as = (AutonomousSystem) o;
 
-        return ASNumber == asNetwork.ASNumber;
+        return ASNumber == as.ASNumber;
     }
 
     @Override

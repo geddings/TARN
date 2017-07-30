@@ -1,12 +1,11 @@
 package net.floodlightcontroller.tarn;
 
-import net.floodlightcontroller.core.module.IFloodlightService;
-import org.projectfloodlight.openflow.types.IPv4Address;
+import java.util.List;
+
 import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 import org.projectfloodlight.openflow.types.OFPort;
 
-import java.util.List;
-import java.util.Map;
+import net.floodlightcontroller.core.module.IFloodlightService;
 
 /**
  * Created by geddingsbarrineau on 9/19/16.
@@ -14,12 +13,13 @@ import java.util.Map;
  */
 public interface IRandomizerService extends IFloodlightService {
 
-    void addASNetwork(ASNetwork asNetwork);
+    void addAutonomousSystem(AutonomousSystem as);
 
-    void addASNetwork(int ASNumber, IPv4AddressWithMask internalPrefix);
+    void addAutonomousSystem(int ASNumber, IPv4AddressWithMask internalPrefix);
 
-    void removeASNetwork(int ASNumber);
+    void removeAutonomousSystem(int ASNumber);
 
+    List<AutonomousSystem> getAutonomousSystems();
     /**
      * Retrieve the configured local port
      *

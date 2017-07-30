@@ -1,28 +1,13 @@
 package net.floodlightcontroller.tarn;
 
-import net.floodlightcontroller.core.IFloodlightProviderService;
-import net.floodlightcontroller.core.IOFSwitch;
-import net.floodlightcontroller.core.module.FloodlightModuleContext;
-import net.floodlightcontroller.core.test.MockThreadPoolService;
-import net.floodlightcontroller.debugcounter.IDebugCounterService;
-import net.floodlightcontroller.debugcounter.MockDebugCounterService;
-import net.floodlightcontroller.packet.*;
-import net.floodlightcontroller.test.FloodlightTestCase;
-import net.floodlightcontroller.threadpool.IThreadPoolService;
-import org.easymock.EasyMock;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.projectfloodlight.openflow.protocol.OFFactories;
 import org.projectfloodlight.openflow.protocol.OFPacketIn;
-import org.projectfloodlight.openflow.protocol.OFPacketInReason;
-import org.projectfloodlight.openflow.protocol.OFVersion;
-import org.projectfloodlight.openflow.protocol.match.MatchField;
-import org.projectfloodlight.openflow.types.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.easymock.EasyMock.createMock;
+import net.floodlightcontroller.core.IOFSwitch;
+import net.floodlightcontroller.core.module.FloodlightModuleContext;
+import net.floodlightcontroller.packet.IPacket;
+import net.floodlightcontroller.test.FloodlightTestCase;
 
 /**
  * Created by geddingsbarrineau on 9/23/16.
@@ -32,7 +17,6 @@ import static org.easymock.EasyMock.createMock;
 public class RandomizerTest extends FloodlightTestCase {
 
     protected static Logger log = LoggerFactory.getLogger(RandomizerTest.class);
-    Randomizer randomizer;
     FloodlightModuleContext fmc;
     protected OFPacketIn packetIn;
     protected IPacket testPacket;

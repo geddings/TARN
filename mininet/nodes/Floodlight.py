@@ -66,53 +66,20 @@ class Floodlight(Controller):
         subprocess.call('rm ' + self.properties_path + self.properties_file, shell=True)
         super(Floodlight, self).stop()
 
-    def setRandomizeTo(self, randomize):
+    def getInfo(self):
+        ret = self.rest_call('wm/tarn/info/json', '', 'GET')
+        return ret[2]
+
+    def getASes(self):
+        ret = self.rest_call('wm/tarn/as/json', '', 'GET')
+        return ret[2]
+
+    def addAS(self, as_number, internal_prefix):
         data = {
-            "randomize": str(randomize)
+            "as-number"      : as_number,
+            "internal-prefix": internal_prefix
         }
-        ret = self.rest_call('/wm/randomizer/config/json', data, 'POST')
-        return ret[0] == 200
-
-    def enableRandomizer(self):
-        data = {}
-        ret = self.rest_call('/wm/randomizer/module/enable/json', data, 'POST')
-        return ret[0] == 200
-
-    def disableRandomizer(self):
-        data = {}
-        ret = self.rest_call('/wm/randomizer/module/disable/json', data, 'POST')
-        return ret[0] == 200
-
-    def addServer(self, server):
-        data = {
-            "server": server
-        }
-        ret = self.rest_call('/wm/randomizer/server/add/json', data, 'POST')
-        return ret[0] == 200
-
-    def removeServer(self, server):
-        data = {
-            "server": server
-        }
-        ret = self.rest_call('/wm/randomizer/server/remove/json', data, 'POST')
-        return ret[0] == 200
-
-    def addPrefix(self, ip, mask, server):
-        data = {
-            "ip-address": ip,
-            "mask"      : mask,
-            "server"    : server
-        }
-        ret = self.rest_call('/wm/randomizer/prefix/add/json', data, 'POST')
-        return ret[0] == 200
-
-    def removePrefix(self, ip, mask, server):
-        data = {
-            "ip-address": ip,
-            "mask"      : mask,
-            "server"    : server
-        }
-        ret = self.rest_call('/wm/randomizer/prefix/remove/json', data, 'POST')
+        ret = self.rest_call('/wm/tarn/as/json', data, 'POST')
         return ret[0] == 200
 
     def setLanPort(self, port):
@@ -196,11 +163,10 @@ class Floodlight(Controller):
             'Accept'      : 'application/json',
         }
         body = json.dumps(data)
-        conn = httplib.HTTPConnection('127.0.0.1', self.http_port)
+        conn = httplib.HTTPConnection('localhost', self.http_port)
         conn.request(action, path, body, headers)
         response = conn.getresponse()
         ret = (response.status, response.reason, response.read())
-        print ret
         conn.close()
         return ret
 

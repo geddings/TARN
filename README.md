@@ -23,6 +23,7 @@ There are multiple topologies in which TARN can be run with. The following comma
 - To run a two AS, bgp topology: `sudo python TARN/mininet/topologies/2-AS-ebgp/start.py`
 
 # Links
+**[TARN Wiki - Contains info on REST API](https://github.com/geddings/TARN/wiki)**
 
 **[TARN Floodlight module](https://github.com/geddings/TARN/tree/develop/floodlight/src/main/java/net/floodlightcontroller/tarn)**
 

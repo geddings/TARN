@@ -45,7 +45,7 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService 
     }
 
     @Override
-    public void addAutonomousSystem(int asnumber, IPv4AddressWithMask internalPrefix) {
+    public void addAutonomousSystem(int asnumber, String internalPrefix) {
         autonomousSystems.add(new AutonomousSystem(asnumber, internalPrefix));
     }
 
@@ -111,12 +111,12 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService 
 //        FlowFactory.setSwitchService(switchService);
 
         /* Create and configure a few ASes to test with */
-        AutonomousSystem as1 = new AutonomousSystem(1, IPv4AddressWithMask.of("10.0.0.0/24"));
+        AutonomousSystem as1 = new AutonomousSystem(1, "10.0.0.0/24");
         as1.addPrefix(IPv4AddressWithMask.of("20.0.0.0/24"));
         as1.addPrefix(IPv4AddressWithMask.of("30.0.0.0/24"));
         autonomousSystems.add(as1);
 
-        AutonomousSystem as2 = new AutonomousSystem(2, IPv4AddressWithMask.of("40.0.0.0/24"));
+        AutonomousSystem as2 = new AutonomousSystem(2, "40.0.0.0/24");
         as2.addPrefix(IPv4AddressWithMask.of("50.0.0.0/24"));
         as2.addPrefix(IPv4AddressWithMask.of("60.0.0.0/24"));
         autonomousSystems.add(as2);

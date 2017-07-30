@@ -2,7 +2,6 @@ package net.floodlightcontroller.tarn;
 
 import java.util.List;
 
-import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 import org.projectfloodlight.openflow.types.OFPort;
 
 import net.floodlightcontroller.core.module.IFloodlightService;
@@ -15,7 +14,7 @@ public interface IRandomizerService extends IFloodlightService {
 
     void addAutonomousSystem(AutonomousSystem as);
 
-    void addAutonomousSystem(int ASNumber, IPv4AddressWithMask internalPrefix);
+    void addAutonomousSystem(int ASNumber, String internalPrefix);
 
     void removeAutonomousSystem(int ASNumber);
 

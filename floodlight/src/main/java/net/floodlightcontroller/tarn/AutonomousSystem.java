@@ -10,6 +10,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import net.floodlightcontroller.tarn.web.AutonomousSystemSerializer;
@@ -29,9 +31,13 @@ public class AutonomousSystem {
 
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-    public AutonomousSystem(int ASNumber, IPv4AddressWithMask internalPrefix) {
+    @JsonCreator
+    AutonomousSystem(
+            @JsonProperty("as-number") int ASNumber,
+            @JsonProperty("internal-prefix") String internalPrefix) {
         this.ASNumber = ASNumber;
-        this.internalPrefix = internalPrefix;
+        this.internalPrefix = IPv4AddressWithMask.of(internalPrefix);
+        this.externalPrefix = IPv4AddressWithMask.NONE;
         prefixPool = new ArrayList<>();
         generator = new PrefixGenerator(ASNumber);
 
@@ -102,7 +108,7 @@ public class AutonomousSystem {
         IPv4AddressWithMask getNextPrefix() {
             int next = rng.nextInt();
             if (prefixPool.isEmpty()) {
-                return null;
+                return IPv4AddressWithMask.NONE;
             } else {
                 return prefixPool.get(Math.abs(next) % (prefixPool.size()));
             }

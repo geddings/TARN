@@ -8,13 +8,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
+import org.projectfloodlight.openflow.protocol.OFPortDesc;
+import org.projectfloodlight.openflow.types.DatapathId;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.eventbus.EventBus;
 
+import net.floodlightcontroller.core.IOFSwitchListener;
+import net.floodlightcontroller.core.PortChangeType;
 import net.floodlightcontroller.core.internal.IOFSwitchService;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
@@ -26,7 +29,7 @@ import net.floodlightcontroller.tarn.web.RandomizerWebRoutable;
 /**
  * Created by geddingsbarrineau on 6/12/17.
  */
-public class RandomizerService implements IFloodlightModule, IRandomizerService {
+public class RandomizerService implements IFloodlightModule, IRandomizerService, IOFSwitchListener {
     private static final Logger log = LoggerFactory.getLogger(RandomizerService.class);
 
     private OFPort lanport;
@@ -35,7 +38,7 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService 
     private IRestApiService restApiService;
     private IOFSwitchService switchService;
 
-    public static final EventBus eventBus = new EventBus();
+    static final EventBus eventBus = new EventBus();
 
     private List<AutonomousSystem> autonomousSystems;
 
@@ -108,18 +111,18 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService 
 
         /* Configure the flow factory for testing */
 //        FlowFactory.setSwitch(DatapathId.of(1));
-//        FlowFactory.setSwitchService(switchService);
+        FlowFactory.setSwitchService(switchService);
 
         /* Create and configure a few ASes to test with */
-        AutonomousSystem as1 = new AutonomousSystem(1, "10.0.0.0/24");
-        as1.addPrefix(IPv4AddressWithMask.of("20.0.0.0/24"));
-        as1.addPrefix(IPv4AddressWithMask.of("30.0.0.0/24"));
-        autonomousSystems.add(as1);
-
-        AutonomousSystem as2 = new AutonomousSystem(2, "40.0.0.0/24");
-        as2.addPrefix(IPv4AddressWithMask.of("50.0.0.0/24"));
-        as2.addPrefix(IPv4AddressWithMask.of("60.0.0.0/24"));
-        autonomousSystems.add(as2);
+//        AutonomousSystem as1 = new AutonomousSystem(1, "10.0.0.0/24");
+//        as1.addPrefix(IPv4AddressWithMask.of("20.0.0.0/24"));
+//        as1.addPrefix(IPv4AddressWithMask.of("30.0.0.0/24"));
+//        autonomousSystems.add(as1);
+//
+//        AutonomousSystem as2 = new AutonomousSystem(2, "40.0.0.0/24");
+//        as2.addPrefix(IPv4AddressWithMask.of("50.0.0.0/24"));
+//        as2.addPrefix(IPv4AddressWithMask.of("60.0.0.0/24"));
+//        autonomousSystems.add(as2);
     }
 
     private void parseConfigOptions(Map<String, String> configOptions) {
@@ -155,4 +158,33 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService 
         return l;
     }
 
+    @Override
+    public void switchAdded(DatapathId switchId) {
+        FlowFactory.setSwitch(switchId);
+    }
+
+    @Override
+    public void switchRemoved(DatapathId switchId) {
+
+    }
+
+    @Override
+    public void switchActivated(DatapathId switchId) {
+
+    }
+
+    @Override
+    public void switchPortChanged(DatapathId switchId, OFPortDesc port, PortChangeType type) {
+
+    }
+
+    @Override
+    public void switchChanged(DatapathId switchId) {
+
+    }
+
+    @Override
+    public void switchDeactivated(DatapathId switchId) {
+
+    }
 }

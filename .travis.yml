@@ -7,7 +7,7 @@ jdk:
 dist: trusty
 
 before_install:
-  - floodlight
+  - cd floodlight
 
 install:
 #  - ./.travis/install_dependencies

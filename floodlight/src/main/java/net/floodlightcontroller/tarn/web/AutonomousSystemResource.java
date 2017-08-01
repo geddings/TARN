@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Optional;
 
 import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
+import org.restlet.resource.Delete;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.Put;
@@ -55,5 +56,32 @@ public class AutonomousSystemResource extends ServerResource {
 
         as.get().addPrefix(prefix);
         return Collections.singletonMap("SUCCESS", "Prefix " + prefix + " added to AS " + asNumber + " prefix pool");
+    }
+
+    @Delete
+    public Object removePrefixFromPool(String json) throws IOException {
+        IRandomizerService randomizerService = (IRandomizerService) getContext().getAttributes().get(IRandomizerService.class.getCanonicalName());
+
+        Integer asNumber = Integer.valueOf(getRequestAttributes().get("as-number").toString());
+        Optional<AutonomousSystem> as = randomizerService.getAutonomousSystem(asNumber);
+        if (!as.isPresent()) {
+            return Collections.singletonMap("ERROR", "AS " + asNumber + " not found");
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode prefixNode = objectMapper.readTree(json).get("prefix");
+        if (prefixNode == null) {
+            return Collections.singletonMap("ERROR", "'prefix' node expected but not found");
+        }
+
+        IPv4AddressWithMask prefix;
+        try {
+            prefix = IPv4AddressWithMask.of(prefixNode.asText());
+        } catch (IllegalArgumentException e) {
+            return Collections.singletonMap("ERROR", e.getMessage());
+        }
+
+        as.get().removePrefix(prefix);
+        return Collections.singletonMap("SUCCESS", "Prefix " + prefix + " removed from AS " + asNumber + " prefix pool");
     }
 }

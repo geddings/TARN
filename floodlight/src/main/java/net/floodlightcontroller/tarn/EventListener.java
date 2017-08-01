@@ -22,7 +22,6 @@ public class EventListener {
     @Subscribe
     public void prefixChangeEvent(PrefixChangeEvent event) {
         log.info("{}", event);
-//        FlowFactory.insertPrefixRewriteFlows(event.getAs().getInternalPrefix(), event.getAs().getExternalPrefix());
         FlowFactory.insertPrefixRewriteFlows(event.getAs());
         eventsHandled++;
     }

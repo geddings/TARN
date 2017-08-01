@@ -1,6 +1,7 @@
 package net.floodlightcontroller.tarn;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.projectfloodlight.openflow.types.OFPort;
 
@@ -19,6 +20,9 @@ public interface IRandomizerService extends IFloodlightService {
     void removeAutonomousSystem(int ASNumber);
 
     List<AutonomousSystem> getAutonomousSystems();
+
+    Optional<AutonomousSystem> getAutonomousSystem(int asNumber);
+
     /**
      * Retrieve the configured local port
      *

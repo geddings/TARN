@@ -1,17 +1,19 @@
 language: java
+jdk:
+  - oraclejdk8
 
-sudo: enabled
+#sudo: enabled
 
 dist: trusty
 
 install:
-  - ./.travis/install_dependencies
-  - sudo ./.travis/install_ovs
-  - sudo ./.travis/start_ovs
-  - ./.travis/install_mininet
-  - ./.travis/install_mininext
+#  - ./.travis/install_dependencies
+#  - sudo ./.travis/install_ovs
+#  - sudo ./.travis/start_ovs
+#  - ./.travis/install_mininet
+#  - ./.travis/install_mininext
 
-script: sudo python ./mininet/simpletest.py
+#script: sudo python ./mininet/simpletest.py
 
 notifications:
   email: false

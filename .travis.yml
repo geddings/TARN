@@ -6,6 +6,9 @@ jdk:
 
 dist: trusty
 
+before_install:
+  - floodlight
+
 install:
 #  - ./.travis/install_dependencies
 #  - sudo ./.travis/install_ovs

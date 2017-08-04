@@ -15,7 +15,7 @@ from os import path
 from os import makedirs
 
 HOME_FOLDER = os.getenv('HOME')
-LOG_PATH = HOME_FOLDER + '/TARNProject/TARN/logs/'
+LOG_PATH = HOME_FOLDER + '/TARN/logs/'
 
 
 def pp_json(json_thing, sort=True, indents=4):

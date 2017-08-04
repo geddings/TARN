@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 
 import org.projectfloodlight.openflow.protocol.OFPortDesc;
 import org.projectfloodlight.openflow.types.DatapathId;
-import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,20 +117,8 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
 
         parseConfigOptions(context.getConfigParams(this));
 
-        /* Configure the flow factory for testing */
-        FlowFactory.setSwitch(DatapathId.of(1));
         FlowFactory.setSwitchService(switchService);
 
-        /* Create and configure a few ASes to test with */
-        AutonomousSystem as1 = new AutonomousSystem(1, "10.0.0.0/24");
-        as1.addPrefix(IPv4AddressWithMask.of("20.0.0.0/24"));
-        as1.addPrefix(IPv4AddressWithMask.of("30.0.0.0/24"));
-        autonomousSystems.add(as1);
-
-        AutonomousSystem as2 = new AutonomousSystem(2, "40.0.0.0/24");
-        as2.addPrefix(IPv4AddressWithMask.of("50.0.0.0/24"));
-        as2.addPrefix(IPv4AddressWithMask.of("60.0.0.0/24"));
-        autonomousSystems.add(as2);
     }
 
     private void parseConfigOptions(Map<String, String> configOptions) {

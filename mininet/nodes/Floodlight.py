@@ -67,19 +67,45 @@ class Floodlight(Controller):
         super(Floodlight, self).stop()
 
     def getInfo(self):
+        """Returns general info about the TARN controller."""
         ret = self.rest_call('wm/tarn/info/json', '', 'GET')
         return ret[2]
 
     def getASes(self):
+        """Returns all configured Autonomous Systems from the TARN controller."""
         ret = self.rest_call('wm/tarn/as/json', '', 'GET')
         return ret[2]
 
+    def getAS(self, as_number):
+        """Returns the specified Autonomous Systems from the TARN controller."""
+        ret = self.rest_call('wm/tarn/as/' + as_number + '/json', '', 'GET')
+        return ret[2]
+
     def addAS(self, as_number, internal_prefix):
+        """Adds an Autonomous System to the TARN controller with a given AS number and internal prefix."""
         data = {
             "as-number"      : as_number,
             "internal-prefix": internal_prefix
         }
         ret = self.rest_call('/wm/tarn/as/json', data, 'POST')
+        return ret[0] == 200
+
+    def addPrefixToAS(self, as_number, prefix):
+        """Adds a prefix to the prefix pool of the given AS number if the AS has already been added to the TARN
+        controller."""
+        data = {
+            "prefix": prefix
+        }
+        ret = self.rest_call('/wm/tarn/as/' + as_number + '/json', data, 'POST')
+        return ret[0] == 200
+
+    def removePrefixFromAS(self, as_number, prefix):
+        """Attempts to remove the given prefix from the prefix pool of the given AS number if the AS has already been
+        added to the TARN controller."""
+        data = {
+            "prefix": prefix
+        }
+        ret = self.rest_call('/wm/tarn/as/' + as_number + '/json', data, 'DELETE')
         return ret[0] == 200
 
     def setLanPort(self, port):

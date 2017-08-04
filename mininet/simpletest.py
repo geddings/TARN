@@ -61,10 +61,10 @@ def setUp():
     # c1.addAS("3", "10.0.0.0/16")
     # print pp_json(c1.getASes())
 
-    # End-to-end communication setup
+
+    # End-to-end communication setup as below
     h1.cmd('route add -net 20.0.0.0 netmask 255.255.255.0 dev h1-eth0')
     h2.cmd('route add -net 10.0.0.0 netmask 255.255.255.0 dev h2-eth0')
-
 
     # Wait for all commands to finish
     results = {}

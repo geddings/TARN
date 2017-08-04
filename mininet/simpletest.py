@@ -3,7 +3,6 @@ import os
 import subprocess
 
 import mininet.log as log
-from mininet.cli import CLI
 from mininet.net import Mininet
 
 from nodes import Floodlight
@@ -68,7 +67,7 @@ if __name__ == '__main__':
     c1.addAS("3", "10.0.0.0/16")
     print pp_json(c1.getASes())
 
-    CLI(net)
+    # CLI(net)
 
     # Stop everything in the network
     net.stop()

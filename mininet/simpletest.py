@@ -62,10 +62,13 @@ if __name__ == '__main__':
                         shell=True)
 
     # Issue some commands to the controllers
-    print pp_json(c1.getInfo())
     print pp_json(c1.getASes())
     c1.addAS("3", "10.0.0.0/16")
     print pp_json(c1.getASes())
+
+    print pp_json(c2.getASes())
+    c2.addAS("5", "50.0.0.0/16")
+    print pp_json(c2.getASes())
 
     # CLI(net)
 

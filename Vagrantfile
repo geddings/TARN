@@ -15,14 +15,14 @@ Vagrant.configure("2") do |config|
 
 
   ## Provisioning
-  config.vm.provision :shell, name: "INIT", :inline => "setup/install_dependencies"
-  config.vm.provision :shell, name: "JAVA", :inline => "setup/install_java"
-  config.vm.provision :shell, name: "OVS", :inline => "setup/install_ovs"
-  config.vm.provision :shell, name: "OVS", :inline => "setup/start_ovs"
-  config.vm.provision :shell, name: "MININET", :inline => "setup/install_mininet"
-  config.vm.provision :shell, name: "MININEXT", :inline => "setup/install_mininext"
-  #config.vm.provision :shell, name: "FLOODLIGHT", :inline => "/setup/install_floodlight"
-  config.vm.provision :shell, name: "CLEANUP", :inline => "/setup/cleanup"
+  config.vm.provision "shell", path: "./setup/install_dependencies"
+  config.vm.provision "shell", path: "./setup/install_java"
+  config.vm.provision "shell", path: "./setup/install_ovs"
+  config.vm.provision "shell", path: "./setup/start_ovs"
+  config.vm.provision "shell", path: "./setup/install_mininet"
+  config.vm.provision "shell", path: "./setup/install_mininext"
+  #config.vm.provision "shell", path: "./setup/install_floodlight"
+  config.vm.provision "shell", path: "./setup/cleanup"
 
   ## SSH config
   config.ssh.forward_x11 = true

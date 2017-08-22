@@ -1,9 +1,24 @@
 
-Vagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/trusty64"
+$startovs = <<SCRIPT
+    sudo ovsdb-server /usr/local/etc/openvswitch/conf.db \
+    --remote=punix:/usr/local/var/run/openvswitch/db.sock \
+    --remote=db:Open_vSwitch,Open_vSwitch,manager_options \
+    --private-key=db:Open_vSwitch,SSL,private_key \
+    --certificate=db:Open_vSwitch,SSL,certificate \
+    --bootstrap-ca-cert=db:Open_vSwitch,SSL,ca_cert --pidfile --detach --log-file
+    
+    sudo ovs-vsctl --no-wait init
+    sudo ovs-vswitchd --pidfile --detach
+    sudo ovs-vsctl show
+    sudo ovs-vsctl --version
+SCRIPT
 
+Vagrant.configure("2") do |config|
+  config.vm.box = "geddings/mininext"
+  config.vm.box_version = "0.0.1"
+  
   config.vm.provider "virtualbox" do |v|
-      v.name = "tarn"
+      # v.name = "tarn"
       # v.customize ["modifyvm", :id, "--cpuexecutioncap", "80"]
       v.customize ["modifyvm", :id, "--memory", "2048"]
   end
@@ -15,19 +30,11 @@ Vagrant.configure("2") do |config|
 
 
   ## Provisioning
-  config.vm.provision "shell", path: "./setup/install_dependencies"
-  config.vm.provision "shell", path: "./setup/install_java"
-  config.vm.provision "shell", path: "./setup/install_ovs"
-  config.vm.provision "shell", path: "./setup/start_ovs"
-  config.vm.provision "shell", path: "./setup/install_mininet"
-  config.vm.provision "shell", path: "./setup/install_mininext"
-  #config.vm.provision "shell", path: "./setup/install_floodlight"
-  config.vm.provision "shell", path: "./setup/cleanup"
+  config.vm.provision "shell", inline: $startovs
 
   ## SSH config
   config.ssh.forward_x11 = true
 
   config.vm.synced_folder "./", "/home/vagrant/TARN" #, id:"mininext", create: true, group: "vagrant", owner: "vagrant"
-  #config.vm.synced_folder "~/Documents/Work/TARN", "/home/vagrant/TARN" #, id:"floodlight", create: true, group: "vagrant", owner: "vagrant" 
 
 end

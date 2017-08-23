@@ -1,16 +1,16 @@
 import httplib
 import json
-import os
 import shutil
 import subprocess
-from os import chdir
-from os import makedirs
-from os import path
 
 import jprops
 import mininet.log as log
+import os
 from mininet.moduledeps import pathCheck
 from mininet.node import Controller
+from os import chdir
+from os import makedirs
+from os import path
 
 
 class Floodlight(Controller):
@@ -25,11 +25,14 @@ class Floodlight(Controller):
     controller_number = 0
 
     fl_root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) + '/floodlight'
+    logback_path = fl_root_dir + '/src/main/resources/logback.xml'
 
     def __init__(self, name,
-                 command='java -jar ' + fl_root_dir + '/target/floodlight.jar',
+                 command='java -Dlogback.configurationFile=' + logback_path + ' -jar ' + fl_root_dir + '/target/floodlight.jar',
                  cargs='',
                  ip='127.0.0.1',
+                 debug=False,
+                 debugPort='',
                  **kwargs):
         # Increment the number of controller instances for naming purposes.
         Floodlight.controller_number += 1
@@ -45,10 +48,17 @@ class Floodlight(Controller):
         # Create the command that will start Floodlight, including the path to the unique properties file.
         self.command = command + ' -cf ' + self.properties_path + self.properties_file
 
+        # Configure the debug stuff
+        if debug:
+            self.command = 'java -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=' + debugPort + '-jar '\
+                           + Floodlight.fl_root_dir + '/target/floodlight.jar' + ' -cf ' + self.properties_path + self.properties_file
+
         # Initialize the parent class.
         Controller.__init__(self, name, cdir=self.fl_root_dir,
                             command=self.command,
                             cargs=cargs, port=self.openflow_port, ip=ip, **kwargs)
+
+
 
     def start(self):
         """Start <controller> <args> on controller.
@@ -84,7 +94,7 @@ class Floodlight(Controller):
     def addAS(self, as_number, internal_prefix):
         """Adds an Autonomous System to the TARN controller with a given AS number and internal prefix."""
         data = {
-            "as-number"      : as_number,
+            "as-number": as_number,
             "internal-prefix": internal_prefix
         }
         ret = self.rest_call('/wm/tarn/as/json', data, 'POST')
@@ -187,7 +197,7 @@ class Floodlight(Controller):
     def rest_call(self, path, data, action):
         headers = {
             'Content-type': 'application/json',
-            'Accept'      : 'application/json',
+            'Accept': 'application/json',
         }
         body = json.dumps(data)
         conn = httplib.HTTPConnection('localhost', self.http_port)

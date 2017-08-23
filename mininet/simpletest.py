@@ -1,20 +1,18 @@
-import json
-import os
-import subprocess
 import atexit
-import time
+import json
+import subprocess
 import sys
+import time
 
+import os
 from mininet.cli import CLI
-from mininet.net import Mininet
 from mininet.log import setLogLevel, info
-from mininet.util import dumpNetConnections
+from mininet.net import Mininet
+from os import makedirs
+from os import path
 
 from nodes import Floodlight
 from topologies.simplenobgptopo import SimpleNoBGPTopo
-
-from os import path
-from os import makedirs
 
 HOME_FOLDER = os.getenv('HOME')
 LOG_PATH = HOME_FOLDER + '/TARNProject/TARN/logs/'
@@ -63,7 +61,7 @@ def setUp():
         results[h.name] = h.waitOutput()
     print "hosts finished"
 
-    time.sleep(10)
+    time.sleep(15)
 
     # REST API to configure AS1 controller
     c1.addAS("1", "10.0.0.0/24")

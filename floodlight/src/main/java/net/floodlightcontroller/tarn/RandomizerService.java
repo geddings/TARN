@@ -1,22 +1,6 @@
 package net.floodlightcontroller.tarn;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.projectfloodlight.openflow.protocol.OFPortDesc;
-import org.projectfloodlight.openflow.types.DatapathId;
-import org.projectfloodlight.openflow.types.OFPort;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.eventbus.EventBus;
-
 import net.floodlightcontroller.core.IOFSwitchListener;
 import net.floodlightcontroller.core.PortChangeType;
 import net.floodlightcontroller.core.internal.IOFSwitchService;
@@ -26,6 +10,14 @@ import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.tarn.web.RandomizerWebRoutable;
+import org.projectfloodlight.openflow.protocol.OFPortDesc;
+import org.projectfloodlight.openflow.types.DatapathId;
+import org.projectfloodlight.openflow.types.OFPort;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by geddingsbarrineau on 6/12/17.
@@ -102,6 +94,9 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
         restApiService = context.getServiceImpl(IRestApiService.class);
         switchService = context.getServiceImpl(IOFSwitchService.class);
 
+        /* Add service as switch listener */
+        switchService.addOFSwitchListener(this);
+        
         /* Create event listeners */
         EventListener eventListener = new EventListener();
 

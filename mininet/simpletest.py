@@ -55,14 +55,13 @@ def setUp():
         subprocess.call('ovs-ofctl dump-flows ' + sw.name + ' -O openflow15 > ' + LOG_PATH + sw.name + '.log',
                         shell=True)
 
-
     # Wait for all commands to finish
     results = {}
     for h in net.hosts:
         results[h.name] = h.waitOutput()
     print "hosts finished"
 
-    time.sleep(5)
+    time.sleep(15)
 
     # REST API to configure AS1 controller
     c1.addAS("1", "10.0.0.0/24")
@@ -71,6 +70,8 @@ def setUp():
     c1.addPrefixToAS("2", "60.0.0.0/24")
     print "C1 get AS information below"
     print pp_json(c1.getInfo())
+
+    # Issue some commands to the controllers
     print pp_json(c1.getASes())
 
     # REST API to configure AS2 controller

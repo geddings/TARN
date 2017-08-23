@@ -3,6 +3,7 @@ import os
 import subprocess
 import atexit
 import time
+import sys
 
 from mininet.cli import CLI
 from mininet.net import Mininet
@@ -17,6 +18,7 @@ from os import makedirs
 
 HOME_FOLDER = os.getenv('HOME')
 LOG_PATH = HOME_FOLDER + '/TARNProject/TARN/logs/'
+PACKET_LOSS_THRESHOLD = 50
 
 
 def pp_json(json_thing, sort=True, indents=4):
@@ -61,7 +63,7 @@ def setUp():
         results[h.name] = h.waitOutput()
     print "hosts finished"
 
-    time.sleep(15)
+    time.sleep(10)
 
     # REST API to configure AS1 controller
     c1.addAS("1", "10.0.0.0/24")
@@ -90,8 +92,10 @@ def setUp():
     info("** Testing network connectivity\n")
     net.ping(net.hosts)
 
-    # h1.sendCmd('ping -c 10 -i 1 ' + h2.IP() + ' > ' + LOG_PATH + 'h1.log')
-    # h2.sendCmd('ping -c 10 -i 1 ' + h1.IP() + ' > ' + LOG_PATH + 'h2.log')
+    if ( net.ping(net.hosts) > PACKET_LOSS_THRESHOLD ):
+        sys.exit(-1)
+    else:
+        sys.exit(0)
 
 
 def startNetwork():

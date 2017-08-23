@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import atexit
+import time
 
 from mininet.cli import CLI
 from mininet.net import Mininet
@@ -55,30 +56,41 @@ def setUp():
                         shell=True)
 
 
-    # REST API to the controllers
-    print pp_json(c1.getInfo())
-    print pp_json(c1.getASes())
-    # c1.addAS("3", "10.0.0.0/16")
-    # print pp_json(c1.getASes())
-
-
-    # End-to-end communication setup as below
-    h1.cmd('route add -net 20.0.0.0 netmask 255.255.255.0 dev h1-eth0')
-    h2.cmd('route add -net 10.0.0.0 netmask 255.255.255.0 dev h2-eth0')
-
     # Wait for all commands to finish
     results = {}
     for h in net.hosts:
         results[h.name] = h.waitOutput()
     print "hosts finished"
 
+    time.sleep(5)
+
+    # REST API to configure AS1 controller
+    c1.addAS("1", "10.0.0.0/24")
+    c1.addPrefixToAS("1", "20.0.0.0/24")
+    c1.addAS("2", "50.0.0.0/24")
+    c1.addPrefixToAS("2", "60.0.0.0/24")
+    print "C1 get AS information below"
+    print pp_json(c1.getInfo())
+    print pp_json(c1.getASes())
+
+    # REST API to configure AS2 controller
+    c2.addAS("2", "50.0.0.0/24")
+    c2.addPrefixToAS("2", "60.0.0.0/24")
+    c2.addAS("1", "10.0.0.0/24")
+    c2.addPrefixToAS("1", "20.0.0.0/24")
+    print "C2 get AS information below"
+    print pp_json(c2.getInfo())
+    print pp_json(c2.getASes())
+
+    # End-to-end communication setup as below
+    h1.cmd('route add -net 20.0.0.0 netmask 255.255.255.0 dev h1-eth0')
+    h2.cmd('route add -net 10.0.0.0 netmask 255.255.255.0 dev h2-eth0')
 
     info("** Testing network connectivity\n")
     net.ping(net.hosts)
 
     # h1.sendCmd('ping -c 10 -i 1 ' + h2.IP() + ' > ' + LOG_PATH + 'h1.log')
     # h2.sendCmd('ping -c 10 -i 1 ' + h1.IP() + ' > ' + LOG_PATH + 'h2.log')
-
 
 
 def startNetwork():

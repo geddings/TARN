@@ -174,6 +174,7 @@ class Floodlight(Controller):
             Floodlight.openflow_port += 10
             Floodlight.sync_manager_port += 10
 
+            self.http_port = Floodlight.http_port
             self.openflow_port = Floodlight.openflow_port
 
             log.debug('Ports being used in controller ' + self.name + ' property file...\n')

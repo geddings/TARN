@@ -12,6 +12,9 @@ from os import chdir
 from os import makedirs
 from os import path
 
+HOME_FOLDER = os.getenv('HOME')
+LOG_PATH = HOME_FOLDER + '/TARNProject/TARN/logs/'
+
 
 class Floodlight(Controller):
     # Port numbers used to run Floodlight. These must be unique for every instance.
@@ -62,10 +65,11 @@ class Floodlight(Controller):
 
     def start(self):
         """Start <controller> <args> on controller.
-           Log to /tmp/cN.log"""
+           Log to /TARN/cN.log (i.e. c1.log, c2.log) """
         log.info('Starting controller...\n')
         pathCheck(self.command)
-        cout = '/tmp/' + self.name + '.log'
+        # cout = '/tmp/' + self.name + '.log'
+        cout = LOG_PATH + self.name + '.log'
         chdir(self.fl_root_dir)
         self.cmd(self.command + ' ' + self.cargs +
                  ' 1>' + cout + ' 2>' + cout + '&')
@@ -200,9 +204,11 @@ class Floodlight(Controller):
             'Accept': 'application/json',
         }
         body = json.dumps(data)
+
         conn = httplib.HTTPConnection('localhost', self.http_port)
         conn.request(action, path, body, headers)
         response = conn.getresponse()
+
         ret = (response.status, response.reason, response.read())
         conn.close()
         return ret

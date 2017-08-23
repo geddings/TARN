@@ -1,10 +1,8 @@
 package net.floodlightcontroller.tarn;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
+import net.floodlightcontroller.core.IOFSwitch;
+import net.floodlightcontroller.core.internal.IOFSwitchService;
+import net.floodlightcontroller.tarn.flows.RewriteFlow;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.types.DatapathId;
 import org.projectfloodlight.openflow.types.EthType;
@@ -12,9 +10,10 @@ import org.projectfloodlight.openflow.types.OFPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import net.floodlightcontroller.core.IOFSwitch;
-import net.floodlightcontroller.core.internal.IOFSwitchService;
-import net.floodlightcontroller.tarn.flows.RewriteFlow;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * The Flow Factory is intended to take all responsibility for creating

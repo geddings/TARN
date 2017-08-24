@@ -72,9 +72,7 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
 
     @Override
     public void setLanPort(int portnumber) {
-        lanport = OFPort.of(portnumber);
-        //FlowFactory.setLanport(lanport);
-        log.warn("Set lanport to {}", portnumber);
+        FlowFactory.setLanPort(portnumber);
     }
 
     @Override
@@ -84,9 +82,7 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
 
     @Override
     public void setWanPort(int portnumber) {
-        wanport = OFPort.of(portnumber);
-        //FlowFactory.setWanport(wanport);
-        log.warn("Set wanport to {}", portnumber);
+        FlowFactory.setWanPort(portnumber);
     }
 
     @Override

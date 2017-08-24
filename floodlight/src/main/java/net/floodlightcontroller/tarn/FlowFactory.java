@@ -29,8 +29,8 @@ public class FlowFactory {
     private static DatapathId sw = DatapathId.NONE;
     private static IOFSwitchService switchService = null;
 
-    private static final OFPort WAN_PORT = OFPort.of(2);
-    private static final OFPort LAN_PORT = OFPort.of(1);
+    private static OFPort WAN_PORT = OFPort.of(2);
+    private static OFPort LAN_PORT = OFPort.of(1);
 
     public static void setSwitch(DatapathId sw) {
         FlowFactory.sw = sw;
@@ -40,6 +40,22 @@ public class FlowFactory {
         FlowFactory.switchService = switchService;
     }
 
+    public static void setLanPort(int portNumber) {
+        try {
+            LAN_PORT = OFPort.of(portNumber);
+        } catch (IllegalArgumentException e) {
+            log.error("Illegal port number. Could not set LAN port.");
+        }
+    }
+
+    public static void setWanPort(int portNumber) {
+        try {
+            WAN_PORT = OFPort.of(portNumber);
+        } catch (IllegalArgumentException e) {
+            log.error("Illegal port number. Could not set WAN port.");
+        }
+    }
+    
     static void insertPrefixRewriteFlows(AutonomousSystem as) {
         Runnable task = () -> {
             if (sw.equals(DatapathId.NONE)) {

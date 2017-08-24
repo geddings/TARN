@@ -48,7 +48,7 @@ def setUp():
     h2 = net.getNodeByName('h2')
 
     h1.setIP('10.0.0.1', prefixLen=16)
-    h2.setIP('20.0.0.1', prefixLen=16)
+    h2.setIP('50.0.0.1', prefixLen=16)
 
     # Log the flow tables on the switches
     for sw in net.switches:
@@ -61,9 +61,10 @@ def setUp():
         results[h.name] = h.waitOutput()
     print "hosts finished"
 
-    time.sleep(15)
+    time.sleep(10)
 
     # REST API to configure AS1 controller
+    c1.configure(lan_port="1", wan_port="2")
     c1.addAS("1", "10.0.0.0/24")
     c1.addPrefixToAS("1", "20.0.0.0/24")
     c1.addAS("2", "50.0.0.0/24")
@@ -75,6 +76,7 @@ def setUp():
     print pp_json(c1.getASes())
 
     # REST API to configure AS2 controller
+    c2.configure(lan_port="2", wan_port="1")
     c2.addAS("2", "50.0.0.0/24")
     c2.addPrefixToAS("2", "60.0.0.0/24")
     c2.addAS("1", "10.0.0.0/24")
@@ -84,13 +86,15 @@ def setUp():
     print pp_json(c2.getASes())
 
     # End-to-end communication setup as below
-    h1.cmd('route add -net 20.0.0.0 netmask 255.255.255.0 dev h1-eth0')
+    h1.cmd('route add -net 50.0.0.0 netmask 255.255.255.0 dev h1-eth0')
     h2.cmd('route add -net 10.0.0.0 netmask 255.255.255.0 dev h2-eth0')
 
+    time.sleep(5)
+    
     info("** Testing network connectivity\n")
-    net.ping(net.hosts)
+    packet_loss = net.ping(net.hosts)
 
-    if ( net.ping(net.hosts) > PACKET_LOSS_THRESHOLD ):
+    if packet_loss > PACKET_LOSS_THRESHOLD:
         sys.exit(-1)
     else:
         sys.exit(0)

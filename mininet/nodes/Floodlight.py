@@ -84,6 +84,15 @@ class Floodlight(Controller):
         """Returns general info about the TARN controller."""
         ret = self.rest_call('wm/tarn/info/json', '', 'GET')
         return ret[2]
+    
+    def configure(self, lan_port, wan_port):
+        """Configures TARN with necessary info."""
+        data = {
+            "lanport": lan_port,
+            "wanport": wan_port
+        }
+        ret = self.rest_call('/wm/tarn/config/json', data, 'POST')
+        return ret[0] == 200
 
     def getASes(self):
         """Returns all configured Autonomous Systems from the TARN controller."""
@@ -120,6 +129,20 @@ class Floodlight(Controller):
             "prefix": prefix
         }
         ret = self.rest_call('/wm/tarn/as/' + as_number + '/json', data, 'DELETE')
+        return ret[0] == 200
+    
+    def getHosts(self):
+        """Returns all configured hosts from the TARN controller."""
+        ret = self.rest_call('wm/tarn/host/json', '', 'GET')
+        return ret[2]
+    
+    def addHost(self, internal_address, member_as):
+        """Adds a Host to the TARN controller with a given internal address and member AS."""
+        data = {
+            "internal-address": internal_address,
+            "member-as": member_as
+        }
+        ret = self.rest_call('/wm/tarn/host/json', data, 'POST')
         return ret[0] == 200
 
     def setLanPort(self, port):

@@ -29,8 +29,8 @@ public class FlowFactory {
     private static DatapathId sw = DatapathId.NONE;
     private static IOFSwitchService switchService = null;
 
-    private static final OFPort WAN_PORT = OFPort.of(2);
-    private static final OFPort LAN_PORT = OFPort.of(1);
+    private static OFPort WAN_PORT = OFPort.of(2);
+    private static OFPort LAN_PORT = OFPort.of(1);
 
     public static void setSwitch(DatapathId sw) {
         FlowFactory.sw = sw;
@@ -40,7 +40,23 @@ public class FlowFactory {
         FlowFactory.switchService = switchService;
     }
 
-    static void insertPrefixRewriteFlows(AutonomousSystem as) {
+    static void setLanPort(int portNumber) {
+        try {
+            LAN_PORT = OFPort.of(portNumber);
+        } catch (IllegalArgumentException e) {
+            log.error("Illegal port number. Could not set LAN port.");
+        }
+    }
+
+    static void setWanPort(int portNumber) {
+        try {
+            WAN_PORT = OFPort.of(portNumber);
+        } catch (IllegalArgumentException e) {
+            log.error("Illegal port number. Could not set WAN port.");
+        }
+    }
+    
+    static void insertASRewriteFlows(AutonomousSystem as) {
         Runnable task = () -> {
             if (sw.equals(DatapathId.NONE)) {
                 log.error("Unable to insert rewrite flows. Switch DPID is not yet configured. Is it connected?");
@@ -53,8 +69,8 @@ public class FlowFactory {
 
             IOFSwitch iofSwitch = switchService.getActiveSwitch(sw);
             if (iofSwitch != null) {
-                List<OFMessage> flows = getFlows(as);
-                log.info("{}", flows);
+                List<OFMessage> flows = getASFlows(as);
+                log.trace("{}", flows);
                 iofSwitch.write(flows);
             } else {
                 log.error("Switch object not found. Prefix flows will not be inserted");
@@ -64,7 +80,7 @@ public class FlowFactory {
         executorService.execute(task);
     }
 
-    private static List<OFMessage> getFlows(AutonomousSystem as) {
+    private static List<OFMessage> getASFlows(AutonomousSystem as) {
         List<OFMessage> flows = new ArrayList<>();
         flows.add(RewriteFlow.builder().as(as).ethType(EthType.IPv4).source().encrypt().inPort(LAN_PORT).outPort(WAN_PORT).build().getFlow());
         flows.add(RewriteFlow.builder().as(as).ethType(EthType.IPv4).destination().encrypt().inPort(LAN_PORT).outPort(WAN_PORT).build().getFlow());
@@ -74,6 +90,43 @@ public class FlowFactory {
         flows.add(RewriteFlow.builder().as(as).ethType(EthType.ARP).destination().encrypt().inPort(LAN_PORT).outPort(WAN_PORT).build().getFlow());
         flows.add(RewriteFlow.builder().as(as).ethType(EthType.ARP).source().decrypt().inPort(WAN_PORT).outPort(LAN_PORT).build().getFlow());
         flows.add(RewriteFlow.builder().as(as).ethType(EthType.ARP).destination().decrypt().inPort(WAN_PORT).outPort(LAN_PORT).build().getFlow());
+        return flows;
+    }
+    
+    static void insertHostRewriteFlows(Host host, AutonomousSystem as) {
+        Runnable task = () -> {
+            if (sw.equals(DatapathId.NONE)) {
+                log.error("Unable to insert rewrite flows. Switch DPID is not yet configured. Is it connected?");
+                return;
+            }
+            if (switchService == null) {
+                log.error("Unable to insert rewrite flows. Switch service is not yet configured.");
+                return;
+            }
+
+            IOFSwitch iofSwitch = switchService.getActiveSwitch(sw);
+            if (iofSwitch != null) {
+                List<OFMessage> flows = getHostFlows(host, as);
+                log.trace("{}", flows);
+                iofSwitch.write(flows);
+            } else {
+                log.error("Switch object not found. Host rewrite flows will not be inserted");
+            }
+        };
+        
+        executorService.execute(task);
+    }
+    
+    private static List<OFMessage> getHostFlows(Host host, AutonomousSystem as) {
+        List<OFMessage> flows = new ArrayList<>();
+        flows.add(RewriteFlow.builder().host(host).as(as).ethType(EthType.IPv4).source().encrypt().inPort(LAN_PORT).outPort(WAN_PORT).build().getFlow());
+        flows.add(RewriteFlow.builder().host(host).as(as).ethType(EthType.IPv4).destination().encrypt().inPort(LAN_PORT).outPort(WAN_PORT).build().getFlow());
+        flows.add(RewriteFlow.builder().host(host).as(as).ethType(EthType.IPv4).source().decrypt().inPort(WAN_PORT).outPort(LAN_PORT).build().getFlow());
+        flows.add(RewriteFlow.builder().host(host).as(as).ethType(EthType.IPv4).destination().decrypt().inPort(WAN_PORT).outPort(LAN_PORT).build().getFlow());
+        flows.add(RewriteFlow.builder().host(host).as(as).ethType(EthType.ARP).source().encrypt().inPort(LAN_PORT).outPort(WAN_PORT).build().getFlow());
+        flows.add(RewriteFlow.builder().host(host).as(as).ethType(EthType.ARP).destination().encrypt().inPort(LAN_PORT).outPort(WAN_PORT).build().getFlow());
+        flows.add(RewriteFlow.builder().host(host).as(as).ethType(EthType.ARP).source().decrypt().inPort(WAN_PORT).outPort(LAN_PORT).build().getFlow());
+        flows.add(RewriteFlow.builder().host(host).as(as).ethType(EthType.ARP).destination().decrypt().inPort(WAN_PORT).outPort(LAN_PORT).build().getFlow());
         return flows;
     }
 }

@@ -1,5 +1,11 @@
 package net.floodlightcontroller.tarn;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import net.floodlightcontroller.tarn.web.AutonomousSystemSerializer;
+import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,26 +14,19 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import net.floodlightcontroller.tarn.web.AutonomousSystemSerializer;
-
 /**
  * Created by geddingsbarrineau on 5/28/17.
+ * 
  */
 @JsonSerialize(using = AutonomousSystemSerializer.class)
 public class AutonomousSystem {
 
     private final int ASNumber;
 
-    private IPv4AddressWithMask internalPrefix;
+    private final IPv4AddressWithMask internalPrefix;
     private IPv4AddressWithMask externalPrefix;
-    private List<IPv4AddressWithMask> prefixPool;
-    private PrefixGenerator generator;
+    private final List<IPv4AddressWithMask> prefixPool;
+    private final PrefixGenerator generator;
 
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
@@ -38,8 +37,8 @@ public class AutonomousSystem {
         this.ASNumber = ASNumber;
         this.internalPrefix = IPv4AddressWithMask.of(internalPrefix);
         this.externalPrefix = IPv4AddressWithMask.NONE;
-        prefixPool = new ArrayList<>();
-        generator = new PrefixGenerator(ASNumber);
+        this.prefixPool = new ArrayList<>();
+        this.generator = new PrefixGenerator(ASNumber);
 
         Runnable task = () -> {
             IPv4AddressWithMask newPrefix = generator.getNextPrefix();
@@ -47,7 +46,7 @@ public class AutonomousSystem {
             externalPrefix = newPrefix;
         };
 
-        executor.scheduleAtFixedRate(task, 0, 5, TimeUnit.SECONDS);
+        executor.scheduleAtFixedRate(task, 0, 15, TimeUnit.SECONDS);
     }
 
     public int getASNumber() {

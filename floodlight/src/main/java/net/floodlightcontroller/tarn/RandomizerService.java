@@ -34,6 +34,7 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
     static final EventBus eventBus = new EventBus();
 
     private List<AutonomousSystem> autonomousSystems;
+    private List<Host> hosts;
 
     @Override
     public void addAutonomousSystem(AutonomousSystem as) {
@@ -66,15 +67,28 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
     }
 
     @Override
+    public void addHost(Host host) {
+        hosts.add(host);
+    }
+
+    @Override
+    public void removeHost(Host host) {
+        hosts.remove(host);
+    }
+
+    @Override
+    public List<Host> getHosts() {
+        return hosts;
+    }
+
+    @Override
     public OFPort getLanPort() {
         return lanport;
     }
 
     @Override
     public void setLanPort(int portnumber) {
-        lanport = OFPort.of(portnumber);
-        //FlowFactory.setLanport(lanport);
-        log.warn("Set lanport to {}", portnumber);
+        FlowFactory.setLanPort(portnumber);
     }
 
     @Override
@@ -84,9 +98,7 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
 
     @Override
     public void setWanPort(int portnumber) {
-        wanport = OFPort.of(portnumber);
-        //FlowFactory.setWanport(wanport);
-        log.warn("Set wanport to {}", portnumber);
+        FlowFactory.setWanPort(portnumber);
     }
 
     @Override
@@ -98,12 +110,13 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
         switchService.addOFSwitchListener(this);
         
         /* Create event listeners */
-        EventListener eventListener = new EventListener();
+        EventListener eventListener = new EventListener(this);
 
         /* Register event listeners */
         eventBus.register(eventListener);
 
         autonomousSystems = new ArrayList<>();
+        hosts = new ArrayList<>();
     }
 
     @Override
@@ -122,7 +135,7 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
             lanport = OFPort.of(Integer.parseInt(configOptions.get("lanport")));
             wanport = OFPort.of(Integer.parseInt(configOptions.get("wanport")));
         } catch (IllegalArgumentException | NullPointerException ex) {
-            log.error("Incorrect Randomizer configuration options. Required: 'enabled', 'randomize', 'lanport', " +
+            log.error("Incorrect Randomizer configuration options. Required: 'lanport', " +
                     "'wanport'", ex);
             throw ex;
         }

@@ -1,8 +1,7 @@
 package net.floodlightcontroller.tarn.flows;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import net.floodlightcontroller.tarn.AutonomousSystem;
+import net.floodlightcontroller.tarn.Host;
 import org.projectfloodlight.openflow.protocol.OFFactories;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFMessage;
@@ -13,13 +12,10 @@ import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.protocol.oxm.OFOxm;
 import org.projectfloodlight.openflow.protocol.oxm.OFOxms;
-import org.projectfloodlight.openflow.types.EthType;
-import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
-import org.projectfloodlight.openflow.types.OFBufferId;
-import org.projectfloodlight.openflow.types.OFPort;
-import org.projectfloodlight.openflow.types.TableId;
+import org.projectfloodlight.openflow.types.*;
 
-import net.floodlightcontroller.tarn.AutonomousSystem;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 7/30/17.
@@ -29,6 +25,7 @@ public class RewriteFlow {
     private OFFactory factory = OFFactories.getFactory(OFVersion.OF_15);
 
     private AutonomousSystem as;
+    private Host host;
     private RewriteField rewriteField;
     private RewriteAction rewriteAction;
     private EthType ethType;
@@ -37,6 +34,7 @@ public class RewriteFlow {
 
     private RewriteFlow(Builder builder) {
         this.as = builder.as;
+        this.host = builder.host;
         this.rewriteField = builder.rewriteField;
         this.rewriteAction = builder.rewriteAction;
         this.ethType = builder.ethType;
@@ -45,11 +43,14 @@ public class RewriteFlow {
     }
 
     public OFMessage getFlow() {
+        int priority = 1;
+        if (host != null) priority = 2;
+        
         return factory.buildFlowAdd()
                 .setBufferId(OFBufferId.NO_BUFFER)
-                .setHardTimeout(30)
+                .setHardTimeout(60)
                 .setIdleTimeout(30)
-                .setPriority(5)
+                .setPriority(priority)
                 .setMatch(getMatch())
                 .setInstructions(getInstructions())
                 .setTableId(getTableId())
@@ -59,19 +60,37 @@ public class RewriteFlow {
     private Match getMatch() {
         MatchField<org.projectfloodlight.openflow.types.IPv4Address> matchField = null;
         if (ethType.equals(EthType.IPv4) && rewriteField.equals(RewriteField.SOURCE)) matchField = MatchField.IPV4_SRC;
-        else if (ethType.equals(EthType.IPv4) && rewriteField.equals(RewriteField.DESTINATION)) matchField = MatchField.IPV4_DST;
-        else if (ethType.equals(EthType.ARP) && rewriteField.equals(RewriteField.SOURCE)) matchField = MatchField.ARP_SPA;
-        else if (ethType.equals(EthType.ARP) && rewriteField.equals(RewriteField.DESTINATION)) matchField = MatchField.ARP_TPA;
+        else if (ethType.equals(EthType.IPv4) && rewriteField.equals(RewriteField.DESTINATION))
+            matchField = MatchField.IPV4_DST;
+        else if (ethType.equals(EthType.ARP) && rewriteField.equals(RewriteField.SOURCE))
+            matchField = MatchField.ARP_SPA;
+        else if (ethType.equals(EthType.ARP) && rewriteField.equals(RewriteField.DESTINATION))
+            matchField = MatchField.ARP_TPA;
 
-        IPv4AddressWithMask matchValue = null;
-        if (rewriteAction.equals(RewriteAction.ENCRYPT)) matchValue = as.getInternalPrefix();
-        else if (rewriteAction.equals(RewriteAction.DECRYPT)) matchValue = as.getExternalPrefix();
+        if (host != null) {
+            IPv4Address matchValue = null;
+            if (rewriteAction.equals(RewriteAction.ENCRYPT)) matchValue = host.getInternalAddress();
+            else if (rewriteAction.equals(RewriteAction.DECRYPT))
+                matchValue = host.getExternalAddress()
+                        .and(as.getExternalPrefix().getMask().not())
+                        .or(as.getExternalPrefix().getValue());
 
-        return factory.buildMatch()
-                .setExact(MatchField.IN_PORT, inPort)
-                .setExact(MatchField.ETH_TYPE, ethType)
-                .setMasked(matchField, matchValue)
-                .build();
+            return factory.buildMatch()
+                    .setExact(MatchField.IN_PORT, inPort)
+                    .setExact(MatchField.ETH_TYPE, ethType)
+                    .setExact(matchField, matchValue)
+                    .build();
+        } else {
+            IPv4AddressWithMask matchValue = null;
+            if (rewriteAction.equals(RewriteAction.ENCRYPT)) matchValue = as.getInternalPrefix();
+            else if (rewriteAction.equals(RewriteAction.DECRYPT)) matchValue = as.getExternalPrefix();
+
+            return factory.buildMatch()
+                    .setExact(MatchField.IN_PORT, inPort)
+                    .setExact(MatchField.ETH_TYPE, ethType)
+                    .setMasked(matchField, matchValue)
+                    .build();
+        }
     }
 
     private List<OFInstruction> getInstructions() {
@@ -89,15 +108,34 @@ public class RewriteFlow {
         List<OFAction> actions = new ArrayList<>();
         OFOxms oxms = factory.oxms();
 
-        IPv4AddressWithMask actionValue = IPv4AddressWithMask.NONE;
-        if (rewriteAction.equals(RewriteAction.ENCRYPT)) actionValue = as.getExternalPrefix();
-        else if (rewriteAction.equals(RewriteAction.DECRYPT)) actionValue = as.getInternalPrefix();
-
         OFOxm oxm = null;
-        if (ethType.equals(EthType.IPv4) && rewriteField.equals(RewriteField.SOURCE)) oxm = oxms.ipv4SrcMasked(actionValue.getValue(), actionValue.getMask());
-        else if (ethType.equals(EthType.IPv4) && rewriteField.equals(RewriteField.DESTINATION)) oxm = oxms.ipv4DstMasked(actionValue.getValue(), actionValue.getMask());
-        else if (ethType.equals(EthType.ARP) && rewriteField.equals(RewriteField.SOURCE)) oxm = oxms.arpSpaMasked(actionValue.getValue(), actionValue.getMask());
-        else if (ethType.equals(EthType.ARP) && rewriteField.equals(RewriteField.DESTINATION)) oxm = oxms.arpTpaMasked(actionValue.getValue(), actionValue.getMask());
+        if (host != null) {
+            IPv4Address actionValue = IPv4Address.NONE;
+            if (rewriteAction.equals(RewriteAction.ENCRYPT))
+                actionValue = host.getExternalAddress()
+                        .and(as.getExternalPrefix().getMask().not())
+                        .or(as.getExternalPrefix().getValue());
+            else if (rewriteAction.equals(RewriteAction.DECRYPT)) actionValue = host.getInternalAddress();
+
+            if (ethType.equals(EthType.IPv4) && rewriteField.equals(RewriteField.SOURCE)) oxm = oxms.ipv4Src(actionValue);
+            else if (ethType.equals(EthType.IPv4) && rewriteField.equals(RewriteField.DESTINATION)) oxm = oxms.ipv4Dst(actionValue);
+            else if (ethType.equals(EthType.ARP) && rewriteField.equals(RewriteField.SOURCE)) oxm = oxms.arpSpa(actionValue);
+            else if (ethType.equals(EthType.ARP) && rewriteField.equals(RewriteField.DESTINATION)) oxm = oxms.arpTpa(actionValue);
+
+        } else {
+            IPv4AddressWithMask actionValue = IPv4AddressWithMask.NONE;
+            if (rewriteAction.equals(RewriteAction.ENCRYPT)) actionValue = as.getExternalPrefix();
+            else if (rewriteAction.equals(RewriteAction.DECRYPT)) actionValue = as.getInternalPrefix();
+
+            if (ethType.equals(EthType.IPv4) && rewriteField.equals(RewriteField.SOURCE))
+                oxm = oxms.ipv4SrcMasked(actionValue.getValue(), actionValue.getMask());
+            else if (ethType.equals(EthType.IPv4) && rewriteField.equals(RewriteField.DESTINATION))
+                oxm = oxms.ipv4DstMasked(actionValue.getValue(), actionValue.getMask());
+            else if (ethType.equals(EthType.ARP) && rewriteField.equals(RewriteField.SOURCE))
+                oxm = oxms.arpSpaMasked(actionValue.getValue(), actionValue.getMask());
+            else if (ethType.equals(EthType.ARP) && rewriteField.equals(RewriteField.DESTINATION))
+                oxm = oxms.arpTpaMasked(actionValue.getValue(), actionValue.getMask());
+        }
 
         actions.add(factory.actions()
                 .buildSetField()
@@ -125,6 +163,7 @@ public class RewriteFlow {
 
     public static class Builder {
         AutonomousSystem as;
+        Host host;
         RewriteField rewriteField;
         RewriteAction rewriteAction;
         EthType ethType;
@@ -133,6 +172,11 @@ public class RewriteFlow {
 
         public Builder as(AutonomousSystem as) {
             this.as = as;
+            return this;
+        }
+
+        public Builder host(Host host) {
+            this.host = host;
             return this;
         }
 

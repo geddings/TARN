@@ -1,11 +1,10 @@
 package net.floodlightcontroller.tarn;
 
-import java.util.List;
-import java.util.Optional;
-
+import net.floodlightcontroller.core.module.IFloodlightService;
 import org.projectfloodlight.openflow.types.OFPort;
 
-import net.floodlightcontroller.core.module.IFloodlightService;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Created by geddingsbarrineau on 9/19/16.
@@ -22,6 +21,12 @@ public interface IRandomizerService extends IFloodlightService {
     List<AutonomousSystem> getAutonomousSystems();
 
     Optional<AutonomousSystem> getAutonomousSystem(int asNumber);
+    
+    void addHost(Host host);
+    
+    void removeHost(Host host);
+    
+    List<Host> getHosts();
 
     /**
      * Retrieve the configured local port

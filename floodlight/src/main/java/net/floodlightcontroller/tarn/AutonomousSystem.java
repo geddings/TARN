@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Created by geddingsbarrineau on 5/28/17.
+ * 
  */
 @JsonSerialize(using = AutonomousSystemSerializer.class)
 public class AutonomousSystem {
@@ -27,8 +28,6 @@ public class AutonomousSystem {
     private final List<IPv4AddressWithMask> prefixPool;
     private final PrefixGenerator generator;
 
-    private final List<Host> hosts;
-    
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
     @JsonCreator
@@ -40,7 +39,6 @@ public class AutonomousSystem {
         this.externalPrefix = IPv4AddressWithMask.NONE;
         this.prefixPool = new ArrayList<>();
         this.generator = new PrefixGenerator(ASNumber);
-        this.hosts = new ArrayList<>();
 
         Runnable task = () -> {
             IPv4AddressWithMask newPrefix = generator.getNextPrefix();
@@ -48,7 +46,7 @@ public class AutonomousSystem {
             externalPrefix = newPrefix;
         };
 
-        executor.scheduleAtFixedRate(task, 0, 5, TimeUnit.SECONDS);
+        executor.scheduleAtFixedRate(task, 0, 15, TimeUnit.SECONDS);
     }
 
     public int getASNumber() {
@@ -75,18 +73,6 @@ public class AutonomousSystem {
 
     public void removePrefix(IPv4AddressWithMask prefix) {
         prefixPool.remove(prefix);
-    }
-    
-    public void addHost(Host host) {
-        hosts.add(host);
-    }
-    
-    public void removeHost(Host host) {
-        hosts.remove(host);
-    }
-    
-    public List<Host> getHosts() {
-        return hosts;
     }
 
     @Override

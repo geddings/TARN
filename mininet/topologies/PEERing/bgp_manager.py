@@ -6,8 +6,8 @@ from quagga_driver import QuaggaDriver
 
 peering_prefix = ['184.164.240.0/24', '184.164.241.0/24', '184.164.242.0/24', '184.164.243.0/24']
 home_ASN = '47065'
-quagga_server = 'quaggaS'
-quagga_client = 'quaggaC'
+quagga_node_S = 'quaggaS'
+quagga_node_C = 'quaggaC'
 route_map = 'AMSIX'
 
 
@@ -51,10 +51,7 @@ class bgpMgmt:
         self.bgpController.show_route_map(node, route_map)
         print '\n\n'
 
-    def prefix_announce(self):
-        node = chooseNode()
-        router_id = home_ASN
-        prefix = choosePrefix()
+    def prefix_announce(self, node, router_id, prefix):
         print '>>> Inject BGP prefix ', prefix, ' on Node', node, '!!'
         self.bgpController.inject_one_prefix(node, router_id, prefix)
         # self.bgpController.show_advertise_routes(node, prefix)
@@ -78,7 +75,7 @@ class bgpMgmt:
 
 
 def chooseNode():
-    quagganodes = [quagga_client, quagga_server]
+    quagganodes = [quagga_node_C, quagga_node_S]
     title = 'What node is this?: '
     node, index = pick(quagganodes, title)
     return node
@@ -96,7 +93,18 @@ def unimplemented():
 
 
 def main():
-    bm = bgpMgmt()
+    bgpManager = bgpMgmt()
+
+    # BGP manipulation on Server side
+    bgpManager.show_node_neighbor(quagga_node_S, '100.69.128.1')
+    # bgpManager.prefix_announce(quagga_node_S, home_ASN, peering_prefix[3])
+    bgpManager.show_adv_route(quagga_node_S, '100.69.128.1')
+
+
+    # BGP manipulation on Client side
+    bgpManager.show_node_neighbor(quagga_node_C, '100.65.128.1')
+    # bgpManager.prefix_announce(quagga_node_C, home_ASN, peering_prefix[2])
+    bgpManager.show_adv_route(quagga_node_C, '100.65.128.1')
 
     # node = chooseNode()
 
@@ -132,13 +140,13 @@ def main():
     #     except(KeyError):
     #         print("Invalid key pressed. Choose a number 0-9!")
 
-    functions = {0: bm.prefix_announce,
-                 1: bm.prefix_withdraw}
-
-    title = 'What do you want to do?: '
-    options = ['Announce BGP prefix', 'Withdraw BGP prefix']
-    option, index = pick(options, title)
-    functions[index]()
+    # functions = {0: bm.prefix_announce,
+    #              1: bm.prefix_withdraw}
+    #
+    # title = 'What do you want to do?: '
+    # options = ['Announce BGP prefix', 'Withdraw BGP prefix']
+    # option, index = pick(options, title)
+    # functions[index]()
 
 
 if __name__ == '__main__':

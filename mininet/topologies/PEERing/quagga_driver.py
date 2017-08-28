@@ -4,14 +4,14 @@ from subprocess import check_output
 
 class QuaggaDriver:
     def __init__(self):
-        self.path = check_output('sudo find /users/ -type d -name miniNExT', shell=True)
+        self.path = check_output('sudo find /home/vagrant/ -type d -name miniNExT', shell=True)
         self.selfPath = self.path.strip() + '/util/mx'
         self.vtysh = 'vtysh -c'
 
     def inject_one_prefix(self, node, router_id, prefix):
         print(
-            self.selfPath + node + 'vtysh -c "configure terminal" -c "router bgp"' + str(
-                router_id) + '-c "network"' + str(
+            self.selfPath + ' ' + node + ' vtysh -c "configure terminal" -c "router bgp"' + str(
+                router_id) + ' -c "network" ' + str(
                 prefix))
         call([self.selfPath, node, 'vtysh', '-c', '\"configure terminal\"', '-c',
               '\"router bgp \"' + str(router_id),

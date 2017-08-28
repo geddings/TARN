@@ -14,6 +14,10 @@ from os import path
 from nodes import Floodlight
 from topologies.simplenobgptopo import SimpleNoBGPTopo
 
+from os import path
+from os import makedirs
+from datacollector import DataCollector
+
 HOME_FOLDER = os.getenv('HOME')
 LOG_PATH = HOME_FOLDER + '/TARNProject/TARN/logs/'
 PACKET_LOSS_THRESHOLD = 50
@@ -50,11 +54,6 @@ def setUp():
     h1.setIP('10.0.0.1', prefixLen=16)
     h2.setIP('50.0.0.1', prefixLen=16)
 
-    # Log the flow tables on the switches
-    for sw in net.switches:
-        subprocess.call('ovs-ofctl dump-flows ' + sw.name + ' -O openflow15 > ' + LOG_PATH + sw.name + '.log',
-                        shell=True)
-
     # Wait for all commands to finish
     results = {}
     for h in net.hosts:
@@ -89,15 +88,22 @@ def setUp():
     h1.cmd('route add -net 50.0.0.0 netmask 255.255.255.0 dev h1-eth0')
     h2.cmd('route add -net 10.0.0.0 netmask 255.255.255.0 dev h2-eth0')
 
-    time.sleep(5)
-    
+    dataCollect = DataCollector()
+    # Log tcpdump on interface
+    dataCollect.tcpdump_on_intf('s1-eth1')
+
+    # Log the flow tables on the switches
+    for sw in net.switches:
+        dataCollect.log_flows_on_switch(sw)
+
+
     info("** Testing network connectivity\n")
     packet_loss = net.ping(net.hosts)
 
-    if packet_loss > PACKET_LOSS_THRESHOLD:
-        sys.exit(-1)
-    else:
-        sys.exit(0)
+    # if ( net.ping(net.hosts) > PACKET_LOSS_THRESHOLD ):
+    #     sys.exit(-1)
+    # else:
+    #     sys.exit(0)
 
 
 def startNetwork():

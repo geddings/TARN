@@ -40,9 +40,9 @@ public class Host {
         this.internal = IPv4Address.of(internal);
         this.external = IPv4Address.NONE;
         this.memberAS = memberAS;
-        this.addressGenerator = new AddressGenerator(this.internal.getInt());
         this.dwellTimeGenerator = new DwellTimeGenerator();
-
+        this.addressGenerator = new AddressGenerator(this.internal.getInt(), this.dwellTimeGenerator.getTotalUpdates());
+        
         changeAddressTask = new SingletonTask(executor, new ChangeAddressRunnable());
         changeAddressTask.reschedule(0, TimeUnit.SECONDS);
     }
@@ -72,11 +72,15 @@ public class Host {
     class AddressGenerator {
         Random rng;
 
-        AddressGenerator(long seed) {
+        AddressGenerator(long seed, long totalUpdates) {
             int rate = 5;
             rng = new Random(seed);
-            long totalUpdates = Instant.now().getEpochSecond() / rate;
+//            long totalUpdates = Instant.now().getEpochSecond() / rate;
             for (int i = 0; i < totalUpdates; i++) rng.nextInt();
+        }
+        
+        void catchUp() {
+            
         }
 
         IPv4Address getNextAddress() {
@@ -87,6 +91,7 @@ public class Host {
  
     class DwellTimeGenerator {
         List<Double> dwellTimes;
+        long totalUpdates = 0;
         int index = 0;
         
         DwellTimeGenerator() {
@@ -104,11 +109,11 @@ public class Host {
                 cumulativeSeconds += dwellTimes.get(index);
                 index++;
                 if (index >= dwellTimes.size()) index = 0;
+                totalUpdates++;
             }
             this.index = index;
             
-            log.info("Cumulative: {}, Total: {}", cumulativeSeconds, totalSeconds);
-            log.info("Index: {}", index);
+            log.info("Cumulative: {}, Total: {}, Index: {}", new Object[]{cumulativeSeconds, totalSeconds, index});
             try {
                 Thread.sleep((long)(cumulativeSeconds*1000-totalSeconds*1000));
             } catch (InterruptedException e) {
@@ -118,11 +123,15 @@ public class Host {
 
         long getNextDwellTime() {
             Double dwell = dwellTimes.get(index);
-            log.info("New dwell time for host {}: {}", internal, dwell);
+            log.info("New dwell time for host {} index {}: {}", new Object[]{internal, index, dwell});
             index++;
             if (index >= dwellTimes.size()) index = 0;
+            totalUpdates++;
             return Math.round(dwell * 1000);
         }
-        
+
+        public long getTotalUpdates() {
+            return totalUpdates;
+        }
     }
 }

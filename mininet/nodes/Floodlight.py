@@ -28,7 +28,7 @@ class Floodlight(Controller):
     controller_number = 0
 
     fl_root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) + '/floodlight'
-    logback_path = fl_root_dir + '/src/main/resources/logback.xml'
+    logback_path = fl_root_dir + '/target/classes/logback.xml'
 
     def __init__(self, name,
                  command='java -Dlogback.configurationFile=' + logback_path + ' -jar ' + fl_root_dir + '/target/floodlight.jar',

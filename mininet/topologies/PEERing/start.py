@@ -1,9 +1,11 @@
-import os
-import sys
 import atexit
+import sys
+import time
 
 import mininet.util
 import mininext.util
+import os
+
 mininet.util.isShellBuiltin = mininext.util.isShellBuiltin
 sys.modules['mininet.util'] = mininet.util
 
@@ -11,15 +13,12 @@ sys.path.insert(0, os.path.abspath('../..'))
 from nodes import Floodlight
 
 from mininet.log import setLogLevel, info
-from mininet.net import Mininet
 from mininext.cli import CLI
-from mininet.link import Intf
 
 from topo import QuaggaTopo
 from bgp_manager import bgpMgmt
 
 from mininext.net import MiniNExT
-
 
 # global PEERING testbed parameters
 home_ASN = '47065'
@@ -31,7 +30,7 @@ def serverConnectPEERing():
     # Server-side Parameters for PEERING setup
     quagga_node = 'quaggaS'
     openvpn_tap_device = "tap5"
-    openvpn_tap_ip = '100.69.128.9'
+    openvpn_tap_ip = '100.69.128.8'
     ovs_peering_quagga = 'sw2'
 
     # Server-side Parameters for end-to-end routing communication
@@ -41,7 +40,6 @@ def serverConnectPEERing():
     server_ip = '10.0.0.1'
     server_gw = quaggaS_facing_server
     server_static_route = 'route add -net 184.164.243.0 netmask 255.255.255.0 quaggaS-eth0'
-
 
     info('** Connecting Server Side Quagga to PEERing testbed ... \n')
     # Network topology setup
@@ -56,6 +54,17 @@ def serverConnectPEERing():
     for controller in net.controllers:
         controller.start()
     sw_server.start([c1])
+    sw_server.cmd('ovs-vsctl set bridge sw1 protocols=OpenFlow15')
+
+    time.sleep(10)
+
+    # REST API to configure AS1 controller
+    c1.configure(lan_port="1", wan_port="2")
+    c1.addAS("1", "10.0.0.0/24")
+    c1.addPrefixToAS("1", "184.164.243.0/24")
+    c1.addHost("10.0.0.1", "1")
+    c1.addAS("100", "184.164.242.100/32")
+    c1.addPrefixToAS("100", "184.164.242.100/32")
 
     # PEERING setup
     cmd1 = 'ovs-vsctl add-port ' + ovs_peering_quagga + ' ' + openvpn_tap_device
@@ -81,13 +90,12 @@ def serverConnectPEERing():
     bgpManager.prefix_announce(quagga_node, home_ASN, announce_prefix)
 
 
-
 # Connects Client Side MiniNExT Quagga instance to PEERing peers
 def clientConnectPEERing():
     # Client-side Parameters for PEERING setup
     quagga_node = 'quaggaC'
     openvpn_tap_device = "tap1"
-    openvpn_tap_ip = '100.65.128.6'
+    openvpn_tap_ip = '100.65.128.3'
     ovs_peering_quagga = 'sw3'
 
     # Client-side Parameters for end-to-end routing communication
@@ -97,7 +105,6 @@ def clientConnectPEERing():
     client_ip = '184.164.242.100'
     client_gw = quaggaC_facing_client
 
-
     info('** Connecting Client Side Quagga to PEERing testbed ... \n')
     # Network topology setup
     sw_peering = net.getNodeByName('sw3')
@@ -106,13 +113,22 @@ def clientConnectPEERing():
     client = net.getNodeByName('client')
     sw_peering.start([])
 
-
     # Controller setup
     c2 = net.getNodeByName('c2')
     for controller in net.controllers:
         controller.start()
     sw_client.start([c2])
+    sw_client.cmd('ovs-vsctl set bridge sw4 protocols=OpenFlow15')
 
+    time.sleep(10)
+
+    # REST API to configure AS1 controller
+    c2.configure(lan_port="2", wan_port="1")
+    c2.addAS("1", "10.0.0.0/24")
+    c2.addPrefixToAS("1", "184.164.243.0/24")
+    c2.addHost("10.0.0.1", "1")
+    c2.addAS("100", "184.164.242.100/32")
+    c2.addPrefixToAS("100", "184.164.242.100/32")
 
     # PEERING Setup
     cmd1 = 'ovs-vsctl add-port ' + ovs_peering_quagga + ' ' + openvpn_tap_device
@@ -131,11 +147,9 @@ def clientConnectPEERing():
     cmd4 = 'route add default gw ' + client_gw
     client.cmd(cmd4)
 
-
     info('** Announcing BGP prefix.. \n')
     bgpManager = bgpMgmt()
     bgpManager.prefix_announce(quagga_node, home_ASN, announce_prefix)
-
 
 
 def startNetwork():

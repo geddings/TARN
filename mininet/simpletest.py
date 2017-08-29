@@ -1,6 +1,5 @@
 import atexit
 import json
-import subprocess
 import sys
 import time
 
@@ -13,10 +12,6 @@ from os import path
 
 from nodes import Floodlight
 from topologies.simplenobgptopo import SimpleNoBGPTopo
-
-from os import path
-from os import makedirs
-from datacollector import DataCollector
 
 HOME_FOLDER = os.getenv('HOME')
 LOG_PATH = HOME_FOLDER + '/TARNProject/TARN/logs/'
@@ -70,9 +65,9 @@ def setUp():
     c1.addPrefixToAS("2", "60.0.0.0/24")
     print "C1 get AS information below"
     print pp_json(c1.getInfo())
-
-    # Issue some commands to the controllers
     print pp_json(c1.getASes())
+    
+    c1.addHost("10.0.0.1", "1")
 
     # REST API to configure AS2 controller
     c2.configure(lan_port="2", wan_port="1")
@@ -84,26 +79,24 @@ def setUp():
     print pp_json(c2.getInfo())
     print pp_json(c2.getASes())
 
+    c2.addHost("10.0.0.1", "1")
+
     # End-to-end communication setup as below
     h1.cmd('route add -net 50.0.0.0 netmask 255.255.255.0 dev h1-eth0')
     h2.cmd('route add -net 10.0.0.0 netmask 255.255.255.0 dev h2-eth0')
 
-    dataCollect = DataCollector()
-    # Log tcpdump on interface
-    dataCollect.tcpdump_on_intf('s1-eth1')
-
-    # Log the flow tables on the switches
-    for sw in net.switches:
-        dataCollect.log_flows_on_switch(sw)
-
-
+    time.sleep(20)
+    
     info("** Testing network connectivity\n")
     packet_loss = net.ping(net.hosts)
 
-    # if ( net.ping(net.hosts) > PACKET_LOSS_THRESHOLD ):
-    #     sys.exit(-1)
-    # else:
-    #     sys.exit(0)
+    info('** Running CLI\n')
+    CLI(net)
+
+    if packet_loss > PACKET_LOSS_THRESHOLD:
+        sys.exit(-1)
+    else:
+        sys.exit(0)
 
 
 def startNetwork():

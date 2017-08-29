@@ -10,7 +10,7 @@ Vagrant.configure("2") do |config|
   config.vm.provider "virtualbox" do |v|
       # v.name = "tarn"
       # v.customize ["modifyvm", :id, "--cpuexecutioncap", "80"]
-      v.customize ["modifyvm", :id, "--memory", "2048"]
+      v.customize ["modifyvm", :id, "--memory", "4096"]
   end
 
   ## Guest config
@@ -26,6 +26,6 @@ Vagrant.configure("2") do |config|
   config.ssh.forward_x11 = true
 
   config.vm.synced_folder "./", "/home/vagrant/TARN", group: "root", owner: "root"
-  config.vm.synced_folder "./mininet/topologies/PEERing/configs", "/home/vagrant/TARN/mininet/topologies/PEERing/configs", group: "quaggavty", owner: "quagga"
+  config.vm.synced_folder "./mininet/topologies/PEERing/configs", "/home/vagrant/TARN/mininet/topologies/PEERing/configs", group: "quaggavty", owner: "quagga", mount_options: ["dmode=775,fmode=775"]
 
 end

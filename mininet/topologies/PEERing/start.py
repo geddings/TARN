@@ -30,7 +30,7 @@ def serverConnectPEERing():
     # Server-side Parameters for PEERING setup
     quagga_node = 'quaggaS'
     openvpn_tap_device = "tap5"
-    openvpn_tap_ip = '100.69.128.7'
+    openvpn_tap_ip = '100.69.128.9'
     ovs_peering_quagga = 'sw2'
 
     # Server-side Parameters for end-to-end routing communication
@@ -39,7 +39,8 @@ def serverConnectPEERing():
     quaggaS_lo = '184.164.243.1/32'
     server_ip = '10.0.0.1'
     server_gw = quaggaS_facing_server
-    server_static_route = 'route add -net 184.164.243.0 netmask 255.255.255.0 quaggaS-eth0'
+    server_static_route = 'route add -net 184.164.243.0 netmask 255.255.255.0 gw 10.0.0.1 quaggaS-eth0'
+
 
     info('** Connecting Server Side Quagga to PEERing testbed ... \n')
     # Network topology setup
@@ -85,6 +86,9 @@ def serverConnectPEERing():
     cmd5 = 'route add default gw ' + server_gw
     server.cmd(cmd5)
 
+    quaggaS.setARP(server.IP(intf='server-eth0'), server.MAC(intf='server-eth0'))
+    server.setARP(quaggaS.IP(intf='quaggaS-eth0'),quaggaS.MAC(intf='quaggaS-eth0'))
+
     info('** Announcing BGP prefix.. \n')
     bgpManager = bgpMgmt()
     bgpManager.prefix_announce(quagga_node, home_ASN, announce_prefix)
@@ -95,7 +99,7 @@ def clientConnectPEERing():
     # Client-side Parameters for PEERING setup
     quagga_node = 'quaggaC'
     openvpn_tap_device = "tap1"
-    openvpn_tap_ip = '100.65.128.3'
+    openvpn_tap_ip = '100.65.128.6'
     ovs_peering_quagga = 'sw3'
 
     # Client-side Parameters for end-to-end routing communication
@@ -146,6 +150,9 @@ def clientConnectPEERing():
     client.setIP(client_ip, prefixLen=24, intf='client-eth0')
     cmd4 = 'route add default gw ' + client_gw
     client.cmd(cmd4)
+
+    quaggaC.setARP(client.IP(intf='client-eth0'), client.MAC(intf='client-eth0'))
+    client.setARP(quaggaC.IP(intf='quaggaC-eth0'),quaggaC.MAC(intf='quaggaC-eth0'))
 
     info('** Announcing BGP prefix.. \n')
     bgpManager = bgpMgmt()

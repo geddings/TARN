@@ -27,5 +27,6 @@ Vagrant.configure("2") do |config|
 
   config.vm.synced_folder "./", "/home/vagrant/TARN", group: "root", owner: "root"
   config.vm.synced_folder "./mininet/topologies/PEERing/configs", "/home/vagrant/TARN/mininet/topologies/PEERing/configs", group: "quaggavty", owner: "quagga", mount_options: ["dmode=775,fmode=775"]
+  config.vm.synced_folder "./mininet/topologies/PEERING-Test/configs", "/home/vagrant/TARN/mininet/topologies/PEERING-Test/configs", group: "quaggavty", owner: "quagga", mount_options: ["dmode=775,fmode=775"]
 
 end

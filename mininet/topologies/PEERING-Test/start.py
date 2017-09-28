@@ -10,7 +10,6 @@ mininet.util.isShellBuiltin = mininext.util.isShellBuiltin
 sys.modules['mininet.util'] = mininet.util
 
 sys.path.insert(0, os.path.abspath('../..'))
-from nodes import Floodlight
 
 from mininet.log import setLogLevel, info
 from mininext.cli import CLI
@@ -20,10 +19,13 @@ from bgp_manager import bgpMgmt
 
 from mininext.net import MiniNExT
 
+"""
+  This start.py aims to test PEETING testbed functionality, no floodlight controller stuff involved.
+"""
+
 # global PEERING testbed parameters
 home_ASN = '47065'
 peering_prefix = ['184.164.240.0/24', '184.164.241.0/24', '184.164.242.0/24', '184.164.243.0/24']
-
 
 # Connects Server Side MiniNExT Quagga instance to PEERing peers
 def serverConnectPEERing():
@@ -35,12 +37,13 @@ def serverConnectPEERing():
 
     # Server-side Parameters for end-to-end routing communication
     announce_prefix = peering_prefix[3]
-    quaggaS_facing_server = '10.0.0.2'
+    # quaggaS_facing_server = '10.0.0.2'
+    quaggaS_facing_server = '184.164.243.2'
     quaggaS_lo = '184.164.243.1/32'
-    server_ip = '10.0.0.1'
+    # server_ip = '10.0.0.1'
+    server_ip = '184.164.243.100'
     server_gw = quaggaS_facing_server
-    server_static_route = 'route add -net 184.164.243.0 netmask 255.255.255.0 gw 10.0.0.1 quaggaS-eth0'
-
+    server_static_route = 'route add -net 184.164.243.0 netmask 255.255.255.0 quaggaS-eth0'
 
     info('** Connecting Server Side Quagga to PEERing testbed ... \n')
     # Network topology setup
@@ -51,21 +54,8 @@ def serverConnectPEERing():
     sw_peering.start([])
 
     # Controller setup
-    c1 = net.getNodeByName('c1')
-    for controller in net.controllers:
-        controller.start()
-    sw_server.start([c1])
-    sw_server.cmd('ovs-vsctl set bridge sw1 protocols=OpenFlow15')
-
-    time.sleep(10)
 
     # REST API to configure AS1 controller
-    c1.configure(lan_port="1", wan_port="2")
-    c1.addAS("1", "10.0.0.0/24")
-    c1.addPrefixToAS("1", "184.164.243.0/24")
-    c1.addHost("10.0.0.1", "1")
-    c1.addAS("100", "184.164.242.100/32")
-    c1.addPrefixToAS("100", "184.164.242.100/32")
 
     # PEERING setup
     cmd1 = 'ovs-vsctl add-port ' + ovs_peering_quagga + ' ' + openvpn_tap_device
@@ -85,9 +75,6 @@ def serverConnectPEERing():
     server.setIP(server_ip, prefixLen=24, intf='server-eth0')
     cmd5 = 'route add default gw ' + server_gw
     server.cmd(cmd5)
-
-    quaggaS.setARP(server.IP(intf='server-eth0'), server.MAC(intf='server-eth0'))
-    server.setARP(quaggaS.IP(intf='quaggaS-eth0'),quaggaS.MAC(intf='quaggaS-eth0'))
 
     info('** Announcing BGP prefix.. \n')
     bgpManager = bgpMgmt()
@@ -118,21 +105,8 @@ def clientConnectPEERing():
     sw_peering.start([])
 
     # Controller setup
-    c2 = net.getNodeByName('c2')
-    for controller in net.controllers:
-        controller.start()
-    sw_client.start([c2])
-    sw_client.cmd('ovs-vsctl set bridge sw4 protocols=OpenFlow15')
-
-    time.sleep(10)
 
     # REST API to configure AS1 controller
-    c2.configure(lan_port="2", wan_port="1")
-    c2.addAS("1", "10.0.0.0/24")
-    c2.addPrefixToAS("1", "184.164.243.0/24")
-    c2.addHost("10.0.0.1", "1")
-    c2.addAS("100", "184.164.242.100/32")
-    c2.addPrefixToAS("100", "184.164.242.100/32")
 
     # PEERING Setup
     cmd1 = 'ovs-vsctl add-port ' + ovs_peering_quagga + ' ' + openvpn_tap_device
@@ -151,9 +125,6 @@ def clientConnectPEERing():
     cmd4 = 'route add default gw ' + client_gw
     client.cmd(cmd4)
 
-    quaggaC.setARP(client.IP(intf='client-eth0'), client.MAC(intf='client-eth0'))
-    client.setARP(quaggaC.IP(intf='quaggaC-eth0'),quaggaC.MAC(intf='quaggaC-eth0'))
-
     info('** Announcing BGP prefix.. \n')
     bgpManager = bgpMgmt()
     bgpManager.prefix_announce(quagga_node, home_ASN, announce_prefix)
@@ -167,10 +138,8 @@ def startNetwork():
     net = MiniNExT(topo=topo, build=False)
 
     info('\n*** Starting the network\n')
-    net.addController('c1', controller=Floodlight)
-    net.addController('c2', controller=Floodlight)
-
     net.build()
+    net.start()
 
     serverConnectPEERing()
     clientConnectPEERing()

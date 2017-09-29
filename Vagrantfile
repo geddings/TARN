@@ -1,11 +1,16 @@
 
-Vagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/trusty64"
+$startovs = <<SCRIPT
+    sudo /etc/init.d/openvswitch-switch start
+SCRIPT
 
+Vagrant.configure("2") do |config|
+  config.vm.box = "geddings/mininext"
+  config.vm.box_version = "0.0.2"
+  
   config.vm.provider "virtualbox" do |v|
-      v.name = "TARN"
+      # v.name = "tarn"
       # v.customize ["modifyvm", :id, "--cpuexecutioncap", "80"]
-      v.customize ["modifyvm", :id, "--memory", "2048"]
+      v.customize ["modifyvm", :id, "--memory", "4096"]
   end
 
   ## Guest config
@@ -15,19 +20,13 @@ Vagrant.configure("2") do |config|
 
 
   ## Provisioning
-  config.vm.provision :shell, name: "INIT", :inline => "setup/install_dependencies"
-  config.vm.provision :shell, name: "JAVA", :inline => "setup/install_java"
-  config.vm.provision :shell, name: "OVS", :inline => "setup/install_ovs"
-  config.vm.provision :shell, name: "OVS", :inline => "setup/start_ovs"
-  config.vm.provision :shell, name: "MININET", :inline => "setup/install_mininet"
-  config.vm.provision :shell, name: "MININEXT", :inline => "setup/install_mininext"
-  #config.vm.provision :shell, name: "FLOODLIGHT", :inline => "/setup/install_floodlight"
-  config.vm.provision :shell, name: "CLEANUP", :inline => "/setup/cleanup"
+  config.vm.provision "shell", inline: $startovs
 
   ## SSH config
   config.ssh.forward_x11 = true
 
-  config.vm.synced_folder "./", "/home/vagrant/" #, id:"mininext", create: true, group: "vagrant", owner: "vagrant" 
-  config.vm.synced_folder "~/Documents/Work/TARN", "/home/vagrant/TARN" #, id:"floodlight", create: true, group: "vagrant", owner: "vagrant" 
+  config.vm.synced_folder "./", "/home/vagrant/TARN", group: "root", owner: "root"
+  config.vm.synced_folder "./mininet/topologies/PEERing/configs", "/home/vagrant/TARN/mininet/topologies/PEERing/configs", group: "quaggavty", owner: "quagga", mount_options: ["dmode=775,fmode=775"]
+  config.vm.synced_folder "./mininet/topologies/PEERING-Test/configs", "/home/vagrant/TARN/mininet/topologies/PEERING-Test/configs", group: "quaggavty", owner: "quagga", mount_options: ["dmode=775,fmode=775"]
 
 end

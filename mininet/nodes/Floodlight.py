@@ -1,19 +1,18 @@
+import httplib
+import jprops
+import json
+import mininet.log as log
+import os
 import shutil
 import subprocess
+from mininet.moduledeps import pathCheck
+from mininet.node import Controller
 from os import chdir
 from os import makedirs
 from os import path
-from os import listdir
-from subprocess import check_output
 
-import jprops
-import mininet.log as log
-from mininet.moduledeps import pathCheck
-from mininet.node import Controller
-from pick import pick
-
-import httplib
-import json
+HOME_FOLDER = os.getenv('HOME')
+LOG_PATH = HOME_FOLDER + '/TARN/logs/'
 
 
 class Floodlight(Controller):
@@ -27,35 +26,16 @@ class Floodlight(Controller):
     # Number of Floodlight instances created. Used for naming purposes.
     controller_number = 0
 
-    def listdir_fullpath(d):
-        return [path.join(d, f) for f in listdir(d)]
-
-    # Check TARN folder path
-    # try:
-    #     fl_options = check_output('sudo find /home/ -type d -name TARN', shell=True)
-    #     # Check to make sure only one TARN folder
-    #     if (fl_options == ''):
-    #         user_title = 'Choose a directory to install Floodlight in: '
-    #         user_options = listdir_fullpath('/home/')
-    #         root_dir, index = pick(user_options, user_title)
-    #         fl_root_dir = root_dir + '/TARN'
-    #         installFloodlight()
-    #     else:
-    #         fl_title = 'Choose which instance of Floodlight you want to run: '
-    #         fl_options = fl_options.split('\n')
-    #         fl_root_dir, index = pick(fl_options, fl_title)
-    # except subprocess.CalledProcessError:
-    #     print 'Something went wrong when looking for Floodlight!'
-    #     exit()
-
-    fl_root_dir = '/home/vagrant/TARN'
+    fl_root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__))) + '/floodlight'
+    logback_path = fl_root_dir + '/target/classes/logback.xml'
 
     def __init__(self, name,
-                 command='java -jar ' + fl_root_dir + '/target/floodlight.jar',
+                 command='java -Dlogback.configurationFile=' + logback_path + ' -jar ' + fl_root_dir + '/target/floodlight.jar',
                  cargs='',
                  ip='127.0.0.1',
+                 debug=False,
+                 debugPort='',
                  **kwargs):
-
         # Increment the number of controller instances for naming purposes.
         Floodlight.controller_number += 1
 
@@ -70,17 +50,25 @@ class Floodlight(Controller):
         # Create the command that will start Floodlight, including the path to the unique properties file.
         self.command = command + ' -cf ' + self.properties_path + self.properties_file
 
+        # Configure the debug stuff
+        if debug:
+            self.command = 'java -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=' + debugPort + '-jar '\
+                           + Floodlight.fl_root_dir + '/target/floodlight.jar' + ' -cf ' + self.properties_path + self.properties_file
+
         # Initialize the parent class.
         Controller.__init__(self, name, cdir=self.fl_root_dir,
                             command=self.command,
                             cargs=cargs, port=self.openflow_port, ip=ip, **kwargs)
 
+
+
     def start(self):
         """Start <controller> <args> on controller.
-           Log to /tmp/cN.log"""
+           Log to /TARN/cN.log (i.e. c1.log, c2.log) """
         log.info('Starting controller...\n')
         pathCheck(self.command)
-        cout = '/tmp/' + self.name + '.log'
+        # cout = '/tmp/' + self.name + '.log'
+        cout = LOG_PATH + self.name + '.log'
         chdir(self.fl_root_dir)
         self.cmd(self.command + ' ' + self.cargs +
                  ' 1>' + cout + ' 2>' + cout + '&')
@@ -91,53 +79,69 @@ class Floodlight(Controller):
         subprocess.call('rm ' + self.properties_path + self.properties_file, shell=True)
         super(Floodlight, self).stop()
 
-    def setRandomizeTo(self, randomize):
+    def getInfo(self):
+        """Returns general info about the TARN controller."""
+        ret = self.rest_call('wm/tarn/info/json', '', 'GET')
+        return ret[2]
+    
+    def configure(self, lan_port, wan_port):
+        """Configures TARN with necessary info."""
         data = {
-            "randomize": str(randomize)
+            "lanport": lan_port,
+            "wanport": wan_port
         }
-        ret = self.rest_call('/wm/randomizer/config/json', data, 'POST')
+        ret = self.rest_call('/wm/tarn/config/json', data, 'POST')
         return ret[0] == 200
 
-    def enableRandomizer(self):
-        data = {}
-        ret = self.rest_call('/wm/randomizer/module/enable/json', data, 'POST')
-        return ret[0] == 200
+    def getASes(self):
+        """Returns all configured Autonomous Systems from the TARN controller."""
+        ret = self.rest_call('wm/tarn/as/json', '', 'GET')
+        return ret[2]
 
-    def disableRandomizer(self):
-        data = {}
-        ret = self.rest_call('/wm/randomizer/module/disable/json', data, 'POST')
-        return ret[0] == 200
+    def getAS(self, as_number):
+        """Returns the specified Autonomous Systems from the TARN controller."""
+        ret = self.rest_call('wm/tarn/as/' + as_number + '/json', '', 'GET')
+        return ret[2]
 
-    def addServer(self, server):
+    def addAS(self, as_number, internal_prefix):
+        """Adds an Autonomous System to the TARN controller with a given AS number and internal prefix."""
         data = {
-            "server": server
+            "as-number": as_number,
+            "internal-prefix": internal_prefix
         }
-        ret = self.rest_call('/wm/randomizer/server/add/json', data, 'POST')
+        ret = self.rest_call('/wm/tarn/as/json', data, 'POST')
         return ret[0] == 200
 
-    def removeServer(self, server):
+    def addPrefixToAS(self, as_number, prefix):
+        """Adds a prefix to the prefix pool of the given AS number if the AS has already been added to the TARN
+        controller."""
         data = {
-            "server": server
+            "prefix": prefix
         }
-        ret = self.rest_call('/wm/randomizer/server/remove/json', data, 'POST')
+        ret = self.rest_call('/wm/tarn/as/' + as_number + '/json', data, 'POST')
         return ret[0] == 200
 
-    def addPrefix(self, ip, mask, server):
+    def removePrefixFromAS(self, as_number, prefix):
+        """Attempts to remove the given prefix from the prefix pool of the given AS number if the AS has already been
+        added to the TARN controller."""
         data = {
-            "ip-address": ip,
-            "mask": mask,
-            "server": server
+            "prefix": prefix
         }
-        ret = self.rest_call('/wm/randomizer/prefix/add/json', data, 'POST')
+        ret = self.rest_call('/wm/tarn/as/' + as_number + '/json', data, 'DELETE')
         return ret[0] == 200
-
-    def removePrefix(self, ip, mask, server):
+    
+    def getHosts(self):
+        """Returns all configured hosts from the TARN controller."""
+        ret = self.rest_call('wm/tarn/host/json', '', 'GET')
+        return ret[2]
+    
+    def addHost(self, internal_address, member_as):
+        """Adds a Host to the TARN controller with a given internal address and member AS."""
         data = {
-            "ip-address": ip,
-            "mask": mask,
-            "server": server
+            "internal-address": internal_address,
+            "member-as": member_as
         }
-        ret = self.rest_call('/wm/randomizer/prefix/remove/json', data, 'POST')
+        ret = self.rest_call('/wm/tarn/host/json', data, 'POST')
         return ret[0] == 200
 
     def setLanPort(self, port):
@@ -202,6 +206,7 @@ class Floodlight(Controller):
             Floodlight.openflow_port += 10
             Floodlight.sync_manager_port += 10
 
+            self.http_port = Floodlight.http_port
             self.openflow_port = Floodlight.openflow_port
 
             log.debug('Ports being used in controller ' + self.name + ' property file...\n')
@@ -221,11 +226,12 @@ class Floodlight(Controller):
             'Accept': 'application/json',
         }
         body = json.dumps(data)
-        conn = httplib.HTTPConnection('127.0.0.1', self.http_port)
+
+        conn = httplib.HTTPConnection('localhost', self.http_port)
         conn.request(action, path, body, headers)
         response = conn.getresponse()
+
         ret = (response.status, response.reason, response.read())
-        print ret
         conn.close()
         return ret
 
@@ -257,4 +263,4 @@ def installFloodlight():
 
 
 if __name__ == "__main__":
-    log.setLogLevel('debug')
+    log.setLogLevel('info')

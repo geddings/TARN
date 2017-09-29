@@ -1,0 +1,49 @@
+language: java
+jdk:
+  - oraclejdk8
+
+sudo: required
+
+#dist: trusty
+
+#before_install:
+#  - cd floodlight
+
+#install:
+#  - ./.travis/install_dependencies
+#  - sudo ./.travis/install_ovs
+#  - sudo ./.travis/start_ovs
+#  - ./.travis/install_mininet
+#  - ./.travis/install_mininext
+#
+#script: sudo python ./mininet/simpletest.py
+#
+#notifications:
+#  email: false
+
+# Shamelessly stole this from Mininet
+matrix:
+  include:
+#    - dist: trusty
+#      env: dist="14.04 LTS trusty"
+    - dist: xenial
+      env: dist="16.04 LTS xenial"
+
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq vlan
+  - cd ..
+  - git clone git://github.com/mininet/mininet
+  - cd mininet
+  - sudo util/install.sh -n
+
+install:
+  - bash -c "if [ `lsb_release -rs` == '14.04' ]; then make codecheck; fi"
+  - sudo util/install.sh -fnvw
+
+script:
+  - sudo mn --test pingall
+
+notifications:
+  email:
+    on_success: never

@@ -1,5 +1,9 @@
 package net.floodlightcontroller.tarn;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import net.floodlightcontroller.tarn.web.AutonomousSystemSerializer;
 import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 
 import java.time.Instant;
@@ -12,23 +16,29 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Created by geddingsbarrineau on 5/28/17.
+ * 
  */
-public class ASNetwork {
+@JsonSerialize(using = AutonomousSystemSerializer.class)
+public class AutonomousSystem {
 
     private final int ASNumber;
 
-    private IPv4AddressWithMask internalPrefix;
+    private final IPv4AddressWithMask internalPrefix;
     private IPv4AddressWithMask externalPrefix;
-    private List<IPv4AddressWithMask> prefixPool;
-    private PrefixGenerator generator;
+    private final List<IPv4AddressWithMask> prefixPool;
+    private final PrefixGenerator generator;
 
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-    public ASNetwork(int ASNumber, IPv4AddressWithMask internalPrefix) {
+    @JsonCreator
+    AutonomousSystem(
+            @JsonProperty("as-number") int ASNumber,
+            @JsonProperty("internal-prefix") String internalPrefix) {
         this.ASNumber = ASNumber;
-        this.internalPrefix = internalPrefix;
-        prefixPool = new ArrayList<>();
-        generator = new PrefixGenerator(ASNumber);
+        this.internalPrefix = IPv4AddressWithMask.of(internalPrefix);
+        this.externalPrefix = IPv4AddressWithMask.NONE;
+        this.prefixPool = new ArrayList<>();
+        this.generator = new PrefixGenerator(ASNumber);
 
         Runnable task = () -> {
             IPv4AddressWithMask newPrefix = generator.getNextPrefix();
@@ -36,7 +46,7 @@ public class ASNetwork {
             externalPrefix = newPrefix;
         };
 
-        executor.scheduleAtFixedRate(task, 0, 5, TimeUnit.SECONDS);
+        executor.scheduleAtFixedRate(task, 0, 15, TimeUnit.SECONDS);
     }
 
     public int getASNumber() {
@@ -49,6 +59,10 @@ public class ASNetwork {
 
     public IPv4AddressWithMask getExternalPrefix() {
         return externalPrefix;
+    }
+
+    public List<IPv4AddressWithMask> getPrefixPool() {
+        return prefixPool;
     }
 
     public void addPrefix(IPv4AddressWithMask prefix) {
@@ -70,9 +84,9 @@ public class ASNetwork {
             return false;
         }
 
-        ASNetwork asNetwork = (ASNetwork) o;
+        AutonomousSystem as = (AutonomousSystem) o;
 
-        return ASNumber == asNetwork.ASNumber;
+        return ASNumber == as.ASNumber;
     }
 
     @Override
@@ -93,7 +107,7 @@ public class ASNetwork {
         IPv4AddressWithMask getNextPrefix() {
             int next = rng.nextInt();
             if (prefixPool.isEmpty()) {
-                return null;
+                return IPv4AddressWithMask.NONE;
             } else {
                 return prefixPool.get(Math.abs(next) % (prefixPool.size()));
             }

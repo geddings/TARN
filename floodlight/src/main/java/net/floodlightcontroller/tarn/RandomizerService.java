@@ -1,5 +1,8 @@
 package net.floodlightcontroller.tarn;
 
+import com.google.common.eventbus.EventBus;
+import net.floodlightcontroller.core.IOFSwitchListener;
+import net.floodlightcontroller.core.PortChangeType;
 import net.floodlightcontroller.core.internal.IOFSwitchService;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
@@ -7,24 +10,20 @@ import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.tarn.web.RandomizerWebRoutable;
-
+import org.projectfloodlight.openflow.protocol.OFPortDesc;
 import org.projectfloodlight.openflow.types.DatapathId;
-import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-
-import com.google.common.eventbus.EventBus;
+import java.util.stream.Collectors;
 
 /**
  * Created by geddingsbarrineau on 6/12/17.
  */
-public class RandomizerService implements IFloodlightModule, IRandomizerService {
+public class RandomizerService implements IFloodlightModule, IRandomizerService, IOFSwitchListener {
     private static final Logger log = LoggerFactory.getLogger(RandomizerService.class);
-
-    private Randomizer randomizer;
 
     private OFPort lanport;
     private OFPort wanport;
@@ -32,21 +31,54 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService 
     private IRestApiService restApiService;
     private IOFSwitchService switchService;
 
-    public static final EventBus eventBus = new EventBus();
+    static final EventBus eventBus = new EventBus();
+
+    private List<AutonomousSystem> autonomousSystems;
+    private List<Host> hosts;
 
     @Override
-    public void addASNetwork(ASNetwork asNetwork) {
-
+    public void addAutonomousSystem(AutonomousSystem as) {
+        autonomousSystems.add(as);
     }
 
     @Override
-    public void addASNetwork(int ASNumber, IPv4AddressWithMask internalPrefix) {
-
+    public void addAutonomousSystem(int asnumber, String internalPrefix) {
+        autonomousSystems.add(new AutonomousSystem(asnumber, internalPrefix));
     }
 
     @Override
-    public void removeASNetwork(int ASNumber) {
+    public void removeAutonomousSystem(int asnumber) {
+        List<AutonomousSystem> toRemove = autonomousSystems.stream()
+                .filter(as -> as.getASNumber() == asnumber)
+                .collect(Collectors.toList());
+        autonomousSystems.removeAll(toRemove);
+    }
 
+    @Override
+    public List<AutonomousSystem> getAutonomousSystems() {
+        return autonomousSystems;
+    }
+
+    @Override
+    public Optional<AutonomousSystem> getAutonomousSystem(int asNumber) {
+        return autonomousSystems.stream()
+                .filter(as -> as.getASNumber() == asNumber)
+                .findAny();
+    }
+
+    @Override
+    public void addHost(Host host) {
+        hosts.add(host);
+    }
+
+    @Override
+    public void removeHost(Host host) {
+        hosts.remove(host);
+    }
+
+    @Override
+    public List<Host> getHosts() {
+        return hosts;
     }
 
     @Override
@@ -56,9 +88,7 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService 
 
     @Override
     public void setLanPort(int portnumber) {
-        lanport = OFPort.of(portnumber);
-        //FlowFactory.setLanport(lanport);
-        log.warn("Set lanport to {}", portnumber);
+        FlowFactory.setLanPort(portnumber);
     }
 
     @Override
@@ -68,9 +98,7 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService 
 
     @Override
     public void setWanPort(int portnumber) {
-        wanport = OFPort.of(portnumber);
-        //FlowFactory.setWanport(wanport);
-        log.warn("Set wanport to {}", portnumber);
+        FlowFactory.setWanPort(portnumber);
     }
 
     @Override
@@ -78,36 +106,27 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService 
         restApiService = context.getServiceImpl(IRestApiService.class);
         switchService = context.getServiceImpl(IOFSwitchService.class);
 
-        randomizer = new Randomizer(switchService);
-
+        /* Add service as switch listener */
+        switchService.addOFSwitchListener(this);
+        
         /* Create event listeners */
-        EventListener eventListener = new EventListener();
+        EventListener eventListener = new EventListener(this);
 
         /* Register event listeners */
         eventBus.register(eventListener);
+
+        autonomousSystems = new ArrayList<>();
+        hosts = new ArrayList<>();
     }
 
     @Override
     public void startUp(FloodlightModuleContext context) throws FloodlightModuleException {
-        switchService.addOFSwitchListener(randomizer);
         restApiService.addRestletRoutable(new RandomizerWebRoutable());
 
         parseConfigOptions(context.getConfigParams(this));
 
-        /* Configure the flow factory for testing */
-//        FlowFactory.setSwitch(DatapathId.of(1));
-//        FlowFactory.setSwitchService(switchService);
+        FlowFactory.setSwitchService(switchService);
 
-        /* Create and configure a few ASes to test with */
-        ASNetwork as1 = new ASNetwork(1, IPv4AddressWithMask.of("10.0.0.0/24"));
-        as1.addPrefix(IPv4AddressWithMask.of("20.0.0.0/24"));
-        as1.addPrefix(IPv4AddressWithMask.of("30.0.0.0/24"));
-        randomizer.addASNetwork(as1);
-
-        ASNetwork as2 = new ASNetwork(2, IPv4AddressWithMask.of("40.0.0.0/24"));
-        as2.addPrefix(IPv4AddressWithMask.of("50.0.0.0/24"));
-        as2.addPrefix(IPv4AddressWithMask.of("60.0.0.0/24"));
-        randomizer.addASNetwork(as2);
     }
 
     private void parseConfigOptions(Map<String, String> configOptions) {
@@ -116,7 +135,7 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService 
             lanport = OFPort.of(Integer.parseInt(configOptions.get("lanport")));
             wanport = OFPort.of(Integer.parseInt(configOptions.get("wanport")));
         } catch (IllegalArgumentException | NullPointerException ex) {
-            log.error("Incorrect Randomizer configuration options. Required: 'enabled', 'randomize', 'lanport', " +
+            log.error("Incorrect Randomizer configuration options. Required: 'lanport', " +
                     "'wanport'", ex);
             throw ex;
         }
@@ -143,4 +162,33 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService 
         return l;
     }
 
+    @Override
+    public void switchAdded(DatapathId switchId) {
+        FlowFactory.setSwitch(switchId);
+    }
+
+    @Override
+    public void switchRemoved(DatapathId switchId) {
+
+    }
+
+    @Override
+    public void switchActivated(DatapathId switchId) {
+
+    }
+
+    @Override
+    public void switchPortChanged(DatapathId switchId, OFPortDesc port, PortChangeType type) {
+
+    }
+
+    @Override
+    public void switchChanged(DatapathId switchId) {
+
+    }
+
+    @Override
+    public void switchDeactivated(DatapathId switchId) {
+
+    }
 }

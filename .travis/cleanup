@@ -1,0 +1,4 @@
+#!/bin/sh
+
+sudo apt-get clean
+sudo rm -rf /tmp/*

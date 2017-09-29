@@ -7,17 +7,17 @@ import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
  */
 public class PrefixChangeEvent {
 
-    private ASNetwork as;
-    private IPv4AddressWithMask oldPrefix;
-    private IPv4AddressWithMask newPrefix;
+    private final AutonomousSystem as;
+    private final IPv4AddressWithMask oldPrefix;
+    private final IPv4AddressWithMask newPrefix;
 
-    public PrefixChangeEvent(ASNetwork as, IPv4AddressWithMask oldPrefix, IPv4AddressWithMask newPrefix) {
+    PrefixChangeEvent(AutonomousSystem as, IPv4AddressWithMask oldPrefix, IPv4AddressWithMask newPrefix) {
         this.as = as;
         this.oldPrefix = oldPrefix;
         this.newPrefix = newPrefix;
     }
 
-    public ASNetwork getAs() {
+    public AutonomousSystem getAS() {
         return as;
     }
 

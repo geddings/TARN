@@ -10,17 +10,15 @@ import org.restlet.routing.Router;
  *
  */
 public class RandomizerWebRoutable implements RestletRoutable {
-    protected static final String STR_OPERATION = "operation";
 
     @Override
     public Router getRestlet(Context context) {
         Router router = new Router(context);
-        router.attach("/module/{" + STR_OPERATION + "}/json", ModuleResource.class);
-        router.attach("/server/{" + STR_OPERATION + "}/json", ServerResource.class);
         router.attach("/config/json", ConfigResource.class);
         router.attach("/info/json", InfoResource.class);
-        router.attach("/connections/json", ConnectionsResource.class);
-        router.attach("/prefix/{" + STR_OPERATION + "}/json", PrefixResource.class);
+        router.attach("/as/json", AutonomousSystemsResource.class);
+        router.attach("/as/{as-number}/json", AutonomousSystemResource.class);
+        router.attach("/host/json", HostsResource.class);
         return router;
     }
 

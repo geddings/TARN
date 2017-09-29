@@ -1,11 +1,10 @@
 import httplib
-import json
-import shutil
-import subprocess
-
 import jprops
+import json
 import mininet.log as log
 import os
+import shutil
+import subprocess
 from mininet.moduledeps import pathCheck
 from mininet.node import Controller
 from os import chdir
@@ -13,7 +12,7 @@ from os import makedirs
 from os import path
 
 HOME_FOLDER = os.getenv('HOME')
-LOG_PATH = HOME_FOLDER + '/TARNProject/TARN/logs/'
+LOG_PATH = HOME_FOLDER + '/TARN/logs/'
 
 
 class Floodlight(Controller):

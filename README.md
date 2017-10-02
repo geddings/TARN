@@ -1,6 +1,6 @@
 ![TARN](docs/TARNLogo.png) 
 ====================================
-[![Build Status](http://130.127.88.126:8080/buildStatus/icon?job=tarn)](http://130.127.88.126:8080/job/tarn/)
+[![Build Status](http://130.127.88.126:8080/buildStatus/icon?job=tarn&.png)](http://130.127.88.126:8080/job/tarn/)
 # Installation
 ### Prerequisites
 - [Download and install VirtualBox.](https://www.virtualbox.org)

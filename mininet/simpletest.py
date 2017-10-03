@@ -52,7 +52,7 @@ def setUp():
         results[h.name] = h.waitOutput()
     print "hosts finished"
 
-    time.sleep(10)
+    time.sleep(30)
 
     # REST API to configure AS1 controller
     c1.configure(lan_port="1", wan_port="2")
@@ -86,7 +86,7 @@ def setUp():
     h1.setARP(h2.IP(), h2.MAC())
     h2.setARP(h1.IP(), h1.MAC())
 
-    time.sleep(20)
+    time.sleep(30)
 
     # Query flow rules on each switch and write to log file
     s1.cmd('ovs-ofctl dump-flows s1 -O OpenFlow15 > ' + LOG_PATH + ' s1.log')

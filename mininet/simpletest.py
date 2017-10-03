@@ -94,7 +94,7 @@ def setUp():
 
     info("** Testing network connectivity\n")
     # packet_loss = net.ping(net.hosts)
-    result = h1.cmd('ping -i 0.1 -c 600 ' + str(h2.IP()))
+    result = h1.cmd('ping -i 0.1 -c 1200 ' + str(h2.IP()))
     sent, received = net._parsePing( result )
     info('Sent:' + str(sent) + ' Received:' + str(received) + '\n')
 

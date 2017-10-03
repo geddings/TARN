@@ -1,6 +1,6 @@
 ![TARN](docs/TARNLogo.png) 
 ====================================
-[![Build Status](https://travis-ci.org/geddings/TARN.svg?branch=develop)](https://travis-ci.org/geddings/TARN)
+[![Build Status](http://130.127.88.126:8080/buildStatus/icon?job=tarn&.png)](http://130.127.88.126:8080/job/tarn/)
 # Installation
 ### Prerequisites
 - [Download and install VirtualBox.](https://www.virtualbox.org)

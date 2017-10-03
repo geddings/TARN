@@ -1,17 +1,22 @@
 package net.floodlightcontroller.tarn;
 
 import com.google.common.eventbus.EventBus;
-import net.floodlightcontroller.core.IOFSwitchListener;
-import net.floodlightcontroller.core.PortChangeType;
+import net.floodlightcontroller.core.*;
 import net.floodlightcontroller.core.internal.IOFSwitchService;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
 import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
+import net.floodlightcontroller.packet.ARP;
+import net.floodlightcontroller.packet.Ethernet;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.tarn.web.RandomizerWebRoutable;
-import org.projectfloodlight.openflow.protocol.OFPortDesc;
+import net.floodlightcontroller.util.OFMessageUtils;
+import org.projectfloodlight.openflow.protocol.*;
+import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.types.DatapathId;
+import org.projectfloodlight.openflow.types.EthType;
+import org.projectfloodlight.openflow.types.OFBufferId;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +27,7 @@ import java.util.stream.Collectors;
 /**
  * Created by geddingsbarrineau on 6/12/17.
  */
-public class RandomizerService implements IFloodlightModule, IRandomizerService, IOFSwitchListener {
+public class RandomizerService implements IFloodlightModule, IRandomizerService, IOFSwitchListener, IOFMessageListener {
     private static final Logger log = LoggerFactory.getLogger(RandomizerService.class);
 
     private OFPort lanport;
@@ -160,6 +165,50 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
         Collection<Class<? extends IFloodlightService>> l = new ArrayList<>();
         l.add(IOFSwitchService.class);
         return l;
+    }
+
+    @Override
+    public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
+
+        if (msg.getType() == OFType.PACKET_IN) {
+            OFPacketIn pi = (OFPacketIn) msg;
+            Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
+            if (eth.getEtherType() == EthType.ARP) {
+                log.info("ARP packet received in randomizer service!");
+                handleArp(sw, pi, eth);
+                return Command.STOP;
+            }
+        }
+        return Command.CONTINUE;
+    }
+
+    private void handleArp(IOFSwitch sw, OFPacketIn pi, Ethernet eth) {
+        OFPort inPort = OFMessageUtils.getInPort(pi);
+        OFPacketOut.Builder pob = sw.getOFFactory().buildPacketOut();
+        List<OFAction> actions = new ArrayList<>();
+        OFPort outPort = inPort.equals(lanport) ? wanport : lanport;
+        actions.add(sw.getOFFactory().actions().output(outPort, Integer.MAX_VALUE));
+        pob.setActions(actions);
+        pob.setBufferId(OFBufferId.NO_BUFFER);
+        OFMessageUtils.setInPort(pob, inPort);
+        ARP arp = (ARP) eth.getPayload();
+        pob.setData(pi.getData());
+        sw.write(pob.build());
+    }
+
+    @Override
+    public String getName() {
+        return IRandomizerService.class.getSimpleName();
+    }
+
+    @Override
+    public boolean isCallbackOrderingPrereq(OFType type, String name) {
+        return false;
+    }
+
+    @Override
+    public boolean isCallbackOrderingPostreq(OFType type, String name) {
+        return (type.equals(OFType.PACKET_IN) && name.equals("forwarding"));
     }
 
     @Override

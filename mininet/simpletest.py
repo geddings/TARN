@@ -1,11 +1,8 @@
-import atexit
 import json
+import os
 import sys
 import time
-
-import os
-from mininet.cli import CLI
-from mininet.log import setLogLevel, info
+from mininet.log import info, setLogLevel
 from mininet.net import Mininet
 from os import makedirs
 from os import path
@@ -14,8 +11,8 @@ from nodes import Floodlight
 from topologies.simplenobgptopo import SimpleNoBGPTopo
 
 HOME_FOLDER = os.getenv('HOME')
-LOG_PATH = HOME_FOLDER + '/TARNProject/TARN/logs/'
-PACKET_LOSS_THRESHOLD = 50
+LOG_PATH = HOME_FOLDER + '/TARN/logs/'
+PACKET_LOSS_THRESHOLD = 20
 
 
 def pp_json(json_thing, sort=True, indents=4):
@@ -46,8 +43,8 @@ def setUp():
     h1 = net.getNodeByName('h1')
     h2 = net.getNodeByName('h2')
 
-    h1.setIP('10.0.0.1', prefixLen=16)
-    h2.setIP('50.0.0.1', prefixLen=16)
+    h1.setIP('10.0.0.1', prefixLen=24)
+    h2.setIP('50.0.0.1', prefixLen=24)
 
     # Wait for all commands to finish
     results = {}
@@ -66,7 +63,7 @@ def setUp():
     print "C1 get AS information below"
     print pp_json(c1.getInfo())
     print pp_json(c1.getASes())
-    
+
     c1.addHost("10.0.0.1", "1")
 
     # REST API to configure AS2 controller
@@ -85,13 +82,23 @@ def setUp():
     h1.cmd('route add -net 50.0.0.0 netmask 255.255.255.0 dev h1-eth0')
     h2.cmd('route add -net 10.0.0.0 netmask 255.255.255.0 dev h2-eth0')
 
-    time.sleep(20)
-    
-    info("** Testing network connectivity\n")
-    packet_loss = net.ping(net.hosts)
+    # Add static ARP entries
+    h1.setARP(h2.IP(), h2.MAC())
+    h2.setARP(h1.IP(), h1.MAC())
 
-    info('** Running CLI\n')
-    CLI(net)
+    time.sleep(20)
+
+    # Query flow rules on each switch and write to log file
+    s1.cmd('ovs-ofctl dump-flows s1 -O OpenFlow15 > ' + LOG_PATH + ' s1.log')
+    s2.cmd('ovs-ofctl dump-flows s2 -O OpenFlow15 > ' + LOG_PATH + ' s2.log')
+
+    info("** Testing network connectivity\n")
+    # packet_loss = net.ping(net.hosts)
+    result = h1.cmd('ping -i 0.1 -c 150 ' + str(h2.IP()))
+    sent, received = net._parsePing( result )
+    info('Sent:' + str(sent) + ' Received:' + str(received) + '\n')
+
+    packet_loss = 100.0 * (sent - received) / sent
 
     if packet_loss > PACKET_LOSS_THRESHOLD:
         sys.exit(-1)
@@ -117,9 +124,6 @@ def startNetwork():
 
     setUp()
 
-    info('** Running CLI\n')
-    CLI(net)
-
 
 def stopNetwork():
     if net is not None:
@@ -129,8 +133,10 @@ def stopNetwork():
 
 if __name__ == '__main__':
     # force clean up on exit by registering a cleanup function
-    atexit.register(stopNetwork)
+    # atexit.register(stopNetwork)
 
     setLogLevel('info')
 
     startNetwork()
+
+    stopNetwork()

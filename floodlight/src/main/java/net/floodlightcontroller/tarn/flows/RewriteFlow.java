@@ -43,8 +43,8 @@ public class RewriteFlow {
     }
 
     public OFMessage getFlow() {
-        int priority = 1;
-        if (host != null) priority = 2;
+        int priority = 100;
+        if (host != null) priority = 200;
         
         return factory.buildFlowAdd()
                 .setBufferId(OFBufferId.NO_BUFFER)

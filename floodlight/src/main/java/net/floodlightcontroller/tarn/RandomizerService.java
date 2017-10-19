@@ -1,18 +1,22 @@
 package net.floodlightcontroller.tarn;
 
 import com.google.common.eventbus.EventBus;
-import net.floodlightcontroller.core.IOFSwitchListener;
-import net.floodlightcontroller.core.PortChangeType;
+import net.floodlightcontroller.core.*;
 import net.floodlightcontroller.core.internal.IOFSwitchService;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
 import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
+import net.floodlightcontroller.devicemanager.IDevice;
+import net.floodlightcontroller.devicemanager.IDeviceService;
+import net.floodlightcontroller.packet.ARP;
+import net.floodlightcontroller.packet.Ethernet;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.tarn.web.RandomizerWebRoutable;
-import org.projectfloodlight.openflow.protocol.OFPortDesc;
-import org.projectfloodlight.openflow.types.DatapathId;
-import org.projectfloodlight.openflow.types.OFPort;
+import net.floodlightcontroller.util.OFMessageUtils;
+import org.projectfloodlight.openflow.protocol.*;
+import org.projectfloodlight.openflow.protocol.action.OFAction;
+import org.projectfloodlight.openflow.types.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,14 +26,17 @@ import java.util.stream.Collectors;
 /**
  * Created by geddingsbarrineau on 6/12/17.
  */
-public class RandomizerService implements IFloodlightModule, IRandomizerService, IOFSwitchListener {
+public class RandomizerService implements IFloodlightModule, IRandomizerService, IOFSwitchListener, IOFMessageListener {
     private static final Logger log = LoggerFactory.getLogger(RandomizerService.class);
 
     private OFPort lanport;
     private OFPort wanport;
+    
+    private DatapathId rewriteSwitch = DatapathId.NONE;
 
     private IRestApiService restApiService;
     private IOFSwitchService switchService;
+    private IDeviceService deviceService;
 
     static final EventBus eventBus = new EventBus();
 
@@ -105,6 +112,7 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
     public void init(FloodlightModuleContext context) throws FloodlightModuleException {
         restApiService = context.getServiceImpl(IRestApiService.class);
         switchService = context.getServiceImpl(IOFSwitchService.class);
+        deviceService = context.getServiceImpl(IDeviceService.class);
 
         /* Add service as switch listener */
         switchService.addOFSwitchListener(this);
@@ -159,12 +167,86 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
     public Collection<Class<? extends IFloodlightService>> getModuleDependencies() {
         Collection<Class<? extends IFloodlightService>> l = new ArrayList<>();
         l.add(IOFSwitchService.class);
+        l.add(IDeviceService.class);
         return l;
+    }
+
+    @Override
+    public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
+        if (msg.getType() == OFType.PACKET_IN) {
+            OFPacketIn pi = (OFPacketIn) msg;
+            Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
+            if (eth.getEtherType() == EthType.ARP) {
+                log.info("ARP packet received in randomizer service!");
+//                handleArp(sw, pi, eth);
+                return Command.STOP;
+            }
+        }
+        return Command.CONTINUE;
+    }
+
+    private void handleArp(IOFSwitch sw, OFPacketIn pi, Ethernet eth) {
+        OFPort inPort = OFMessageUtils.getInPort(pi);
+        OFPacketOut.Builder pob = sw.getOFFactory().buildPacketOut();
+        List<OFAction> actions = new ArrayList<>();
+        OFPort outPort = inPort.equals(lanport) ? wanport : lanport;
+        actions.add(sw.getOFFactory().actions().output(outPort, Integer.MAX_VALUE));
+        pob.setActions(actions);
+        pob.setBufferId(OFBufferId.NO_BUFFER);
+        OFMessageUtils.setInPort(pob, inPort);
+        ARP arp = (ARP) eth.getPayload();
+        pob.setData(pi.getData());
+        sw.write(pob.build());
+    }
+    
+    public void sendGratuitiousArp(Host host) {
+        IPv4Address ip = host.getExternalAddress();
+        Iterator<? extends IDevice> iterator = deviceService.queryDevices(MacAddress.NONE, VlanVid.ZERO, host.getInternalAddress(), IPv6Address.NONE, DatapathId.NONE, OFPort.ZERO);
+        if (iterator.hasNext()) {
+            MacAddress mac = iterator.next().getMACAddress();
+            if (rewriteSwitch != DatapathId.NONE) {
+                IOFSwitch sw = switchService.getActiveSwitch(rewriteSwitch);
+                if (sw != null) {
+                    ARP arp = new ARP();
+                    arp.setOpCode(ArpOpcode.REQUEST);
+                    arp.setSenderHardwareAddress(mac);
+                    arp.setSenderProtocolAddress(ip);
+                    arp.setTargetHardwareAddress(MacAddress.BROADCAST);
+                    arp.setTargetProtocolAddress(ip);
+
+                    OFPacketOut po = sw.getOFFactory().buildPacketOut()
+                            .setData(arp.serialize())
+                            .setActions(Collections.singletonList(sw.getOFFactory().actions().output(OFPort.FLOOD, 0xffFFffFF)))
+                            .setInPort(OFPort.CONTROLLER)
+                            .build();
+
+                    sw.write(po);
+                }
+            }
+        } else {
+            log.warn("Host {} is not yet known by the device manager. Cannot sent gratuitious ARP.", ip);
+        }
+    }
+
+    @Override
+    public String getName() {
+        return IRandomizerService.class.getSimpleName();
+    }
+
+    @Override
+    public boolean isCallbackOrderingPrereq(OFType type, String name) {
+        return false;
+    }
+
+    @Override
+    public boolean isCallbackOrderingPostreq(OFType type, String name) {
+        return (type.equals(OFType.PACKET_IN) && name.equals("forwarding"));
     }
 
     @Override
     public void switchAdded(DatapathId switchId) {
         FlowFactory.setSwitch(switchId);
+        rewriteSwitch = switchId;
     }
 
     @Override

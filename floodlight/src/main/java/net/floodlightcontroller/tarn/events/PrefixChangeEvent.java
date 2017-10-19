@@ -1,5 +1,6 @@
-package net.floodlightcontroller.tarn;
+package net.floodlightcontroller.tarn.events;
 
+import net.floodlightcontroller.tarn.AutonomousSystem;
 import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 
 /**

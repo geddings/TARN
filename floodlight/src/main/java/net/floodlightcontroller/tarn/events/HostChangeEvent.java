@@ -1,4 +1,6 @@
-package net.floodlightcontroller.tarn;
+package net.floodlightcontroller.tarn.events;
+
+import net.floodlightcontroller.tarn.Host;
 
 /**
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 8/26/17.
@@ -7,7 +9,7 @@ public class HostChangeEvent {
 
     private final Host host;
 
-    HostChangeEvent(Host host) {
+    public HostChangeEvent(Host host) {
         this.host = host;
     }
 

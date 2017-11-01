@@ -3,6 +3,7 @@ package net.floodlightcontroller.tarn;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import net.floodlightcontroller.tarn.events.PrefixChangeEvent;
 import net.floodlightcontroller.tarn.web.AutonomousSystemSerializer;
 import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 

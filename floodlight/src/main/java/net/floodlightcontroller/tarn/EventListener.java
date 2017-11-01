@@ -1,6 +1,8 @@
 package net.floodlightcontroller.tarn;
 
 import com.google.common.eventbus.Subscribe;
+import net.floodlightcontroller.tarn.events.HostChangeEvent;
+import net.floodlightcontroller.tarn.events.PrefixChangeEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,19 +14,20 @@ import java.util.Optional;
 public class EventListener {
     private static final Logger log = LoggerFactory.getLogger(EventListener.class);
 
-    private final IRandomizerService randomizer;
+    private final RandomizerService randomizer;
 
     /* Event statistics */
     private int eventsHandled;
+    private int sessions;
 
-    EventListener(IRandomizerService randomizer) {
+    EventListener(RandomizerService randomizer) {
         this.randomizer = randomizer;
     }
 
     @Subscribe
     public void stringEvent(String event) {
-        eventsHandled++;
         log.info("String event: {}", event);
+        eventsHandled++;
     }
 
     @Subscribe
@@ -38,6 +41,7 @@ public class EventListener {
     public void hostChangeEvent(HostChangeEvent event) {
         log.info("{}", event);
         Host host = event.getHost();
+        randomizer.sendGratuitiousArp(host);
         Optional<AutonomousSystem> as = randomizer.getAutonomousSystem(host.getMemberAS());
         if (as.isPresent()) {
             FlowFactory.insertHostRewriteFlows(event.getHost(), as.get());

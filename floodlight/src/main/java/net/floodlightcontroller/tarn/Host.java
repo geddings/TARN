@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import net.floodlightcontroller.core.util.SingletonTask;
+import net.floodlightcontroller.tarn.events.HostChangeEvent;
 import net.floodlightcontroller.tarn.web.HostSerializer;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.slf4j.Logger;
@@ -23,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 @JsonSerialize(using = HostSerializer.class)
 public class Host {
     private static final Logger log = LoggerFactory.getLogger(Host.class);
-
+    
     private final IPv4Address internal;
     private IPv4Address external;
     private final int memberAS;

@@ -7,17 +7,16 @@ import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
 import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
+import net.floodlightcontroller.devicemanager.IDevice;
+import net.floodlightcontroller.devicemanager.IDeviceService;
 import net.floodlightcontroller.packet.ARP;
 import net.floodlightcontroller.packet.Ethernet;
+import net.floodlightcontroller.packet.IPv4;
+import net.floodlightcontroller.packet.IPv6;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.tarn.web.RandomizerWebRoutable;
-import net.floodlightcontroller.util.OFMessageUtils;
 import org.projectfloodlight.openflow.protocol.*;
-import org.projectfloodlight.openflow.protocol.action.OFAction;
-import org.projectfloodlight.openflow.types.DatapathId;
-import org.projectfloodlight.openflow.types.EthType;
-import org.projectfloodlight.openflow.types.OFBufferId;
-import org.projectfloodlight.openflow.types.OFPort;
+import org.projectfloodlight.openflow.types.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,9 +31,12 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
 
     private OFPort lanport;
     private OFPort wanport;
+    
+    private DatapathId rewriteSwitch = DatapathId.NONE;
 
     private IRestApiService restApiService;
     private IOFSwitchService switchService;
+    private IDeviceService deviceService;
 
     static final EventBus eventBus = new EventBus();
 
@@ -110,6 +112,7 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
     public void init(FloodlightModuleContext context) throws FloodlightModuleException {
         restApiService = context.getServiceImpl(IRestApiService.class);
         switchService = context.getServiceImpl(IOFSwitchService.class);
+        deviceService = context.getServiceImpl(IDeviceService.class);
 
         /* Add service as switch listener */
         switchService.addOFSwitchListener(this);
@@ -164,36 +167,78 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
     public Collection<Class<? extends IFloodlightService>> getModuleDependencies() {
         Collection<Class<? extends IFloodlightService>> l = new ArrayList<>();
         l.add(IOFSwitchService.class);
+        l.add(IDeviceService.class);
         return l;
     }
 
     @Override
     public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
-
         if (msg.getType() == OFType.PACKET_IN) {
             OFPacketIn pi = (OFPacketIn) msg;
             Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
-            if (eth.getEtherType() == EthType.ARP) {
-                log.info("ARP packet received in randomizer service!");
-                handleArp(sw, pi, eth);
-                return Command.STOP;
+            
+            if (eth.getEtherType() == EthType.IPv4) {
+                log.debug("IPv4 packet received");
+                IPv4 ipv4 = (IPv4) eth.getPayload();
+                
+                if (isTarnPacket(ipv4)) {
+                    log.debug("New TARN session packet received");
+                    // create TARN session?
+                }
+                
+                return Command.CONTINUE;
+            } else if (eth.getEtherType() == EthType.IPv6) {
+                log.debug("IPv6 packet received");
+                IPv6 ipv6 = (IPv6) eth.getPayload();
+                
+                if(isTarnPacket(ipv6)) {
+                    log.debug("New TARN session packet received");
+                    // create TARN session?
+                }
+                
+                return Command.CONTINUE;
             }
+            
         }
+        
         return Command.CONTINUE;
     }
+    
+    boolean isTarnPacket(IPv4 ipv4) {
+        return false;
+    }
+    
+    boolean isTarnPacket(IPv6 ipv6) {
+        return false;
+    }
+    
+    public void sendGratuitiousArp(Host host) {
+        IPv4Address ip = host.getExternalAddress();
+        Iterator<? extends IDevice> iterator = deviceService.queryDevices(MacAddress.NONE, VlanVid.ZERO, host.getInternalAddress(), IPv6Address.NONE, DatapathId.NONE, OFPort.ZERO);
+        if (iterator.hasNext()) {
+            MacAddress mac = iterator.next().getMACAddress();
+            if (rewriteSwitch != DatapathId.NONE) {
+                IOFSwitch sw = switchService.getActiveSwitch(rewriteSwitch);
+                if (sw != null) {
+                    ARP arp = new ARP();
+                    arp.setOpCode(ArpOpcode.REQUEST);
+                    arp.setSenderHardwareAddress(mac);
+                    arp.setSenderProtocolAddress(ip);
+                    arp.setTargetHardwareAddress(MacAddress.BROADCAST);
+                    arp.setTargetProtocolAddress(ip);
 
-    private void handleArp(IOFSwitch sw, OFPacketIn pi, Ethernet eth) {
-        OFPort inPort = OFMessageUtils.getInPort(pi);
-        OFPacketOut.Builder pob = sw.getOFFactory().buildPacketOut();
-        List<OFAction> actions = new ArrayList<>();
-        OFPort outPort = inPort.equals(lanport) ? wanport : lanport;
-        actions.add(sw.getOFFactory().actions().output(outPort, Integer.MAX_VALUE));
-        pob.setActions(actions);
-        pob.setBufferId(OFBufferId.NO_BUFFER);
-        OFMessageUtils.setInPort(pob, inPort);
-        ARP arp = (ARP) eth.getPayload();
-        pob.setData(pi.getData());
-        sw.write(pob.build());
+                    OFPacketOut po = sw.getOFFactory().buildPacketOut()
+                            .setData(arp.serialize())
+                            .setActions(Collections.singletonList(sw.getOFFactory().actions().output(OFPort.FLOOD, 0xffFFffFF)))
+                            .setInPort(OFPort.CONTROLLER)
+                            .build();
+
+                    sw.write(po);
+                }
+            }
+        } else {
+            log.warn("Host {} is not yet known by the device manager. Cannot sent gratuitious ARP.", ip);
+        }
     }
 
     @Override
@@ -214,6 +259,7 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
     @Override
     public void switchAdded(DatapathId switchId) {
         FlowFactory.setSwitch(switchId);
+        rewriteSwitch = switchId;
     }
 
     @Override

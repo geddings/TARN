@@ -1,5 +1,6 @@
-package net.floodlightcontroller.tarn;
+package net.floodlightcontroller.tarn.events;
 
+import net.floodlightcontroller.tarn.AutonomousSystem;
 import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 
 /**
@@ -11,7 +12,7 @@ public class PrefixChangeEvent {
     private final IPv4AddressWithMask oldPrefix;
     private final IPv4AddressWithMask newPrefix;
 
-    PrefixChangeEvent(AutonomousSystem as, IPv4AddressWithMask oldPrefix, IPv4AddressWithMask newPrefix) {
+    public PrefixChangeEvent(AutonomousSystem as, IPv4AddressWithMask oldPrefix, IPv4AddressWithMask newPrefix) {
         this.as = as;
         this.oldPrefix = oldPrefix;
         this.newPrefix = newPrefix;

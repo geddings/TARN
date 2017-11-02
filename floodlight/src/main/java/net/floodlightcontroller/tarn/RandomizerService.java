@@ -11,11 +11,11 @@ import net.floodlightcontroller.devicemanager.IDevice;
 import net.floodlightcontroller.devicemanager.IDeviceService;
 import net.floodlightcontroller.packet.ARP;
 import net.floodlightcontroller.packet.Ethernet;
+import net.floodlightcontroller.packet.IPv4;
+import net.floodlightcontroller.packet.IPv6;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.tarn.web.RandomizerWebRoutable;
-import net.floodlightcontroller.util.OFMessageUtils;
 import org.projectfloodlight.openflow.protocol.*;
-import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.types.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -176,27 +176,40 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
         if (msg.getType() == OFType.PACKET_IN) {
             OFPacketIn pi = (OFPacketIn) msg;
             Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
-            if (eth.getEtherType() == EthType.ARP) {
-                log.info("ARP packet received in randomizer service!");
-//                handleArp(sw, pi, eth);
-                return Command.STOP;
+            
+            if (eth.getEtherType() == EthType.IPv4) {
+                log.debug("IPv4 packet received");
+                IPv4 ipv4 = (IPv4) eth.getPayload();
+                
+                if (isTarnPacket(ipv4)) {
+                    log.debug("New TARN session packet received");
+                    // create TARN session?
+                }
+                
+                return Command.CONTINUE;
+            } else if (eth.getEtherType() == EthType.IPv6) {
+                log.debug("IPv6 packet received");
+                IPv6 ipv6 = (IPv6) eth.getPayload();
+                
+                if(isTarnPacket(ipv6)) {
+                    log.debug("New TARN session packet received");
+                    // create TARN session?
+                }
+                
+                return Command.CONTINUE;
             }
+            
         }
+        
         return Command.CONTINUE;
     }
-
-    private void handleArp(IOFSwitch sw, OFPacketIn pi, Ethernet eth) {
-        OFPort inPort = OFMessageUtils.getInPort(pi);
-        OFPacketOut.Builder pob = sw.getOFFactory().buildPacketOut();
-        List<OFAction> actions = new ArrayList<>();
-        OFPort outPort = inPort.equals(lanport) ? wanport : lanport;
-        actions.add(sw.getOFFactory().actions().output(outPort, Integer.MAX_VALUE));
-        pob.setActions(actions);
-        pob.setBufferId(OFBufferId.NO_BUFFER);
-        OFMessageUtils.setInPort(pob, inPort);
-        ARP arp = (ARP) eth.getPayload();
-        pob.setData(pi.getData());
-        sw.write(pob.build());
+    
+    boolean isTarnPacket(IPv4 ipv4) {
+        return false;
+    }
+    
+    boolean isTarnPacket(IPv6 ipv6) {
+        return false;
     }
     
     public void sendGratuitiousArp(Host host) {

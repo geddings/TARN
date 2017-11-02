@@ -25,8 +25,8 @@ public class Session {
     }
 
     public static class Builder {
-        ConnectionAttributes inbound = null;
-        ConnectionAttributes outbound = null;
+        private ConnectionAttributes inbound = null;
+        private ConnectionAttributes outbound = null;
 
         public Builder inbound(ConnectionAttributes inbound) {
             this.inbound = inbound;

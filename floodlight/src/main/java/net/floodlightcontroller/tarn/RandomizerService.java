@@ -9,13 +9,12 @@ import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
 import net.floodlightcontroller.devicemanager.IDevice;
 import net.floodlightcontroller.devicemanager.IDeviceService;
-import net.floodlightcontroller.packet.ARP;
-import net.floodlightcontroller.packet.Ethernet;
-import net.floodlightcontroller.packet.IPv4;
-import net.floodlightcontroller.packet.IPv6;
+import net.floodlightcontroller.devicemanager.SwitchPort;
+import net.floodlightcontroller.packet.*;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.tarn.web.RandomizerWebRoutable;
 import org.projectfloodlight.openflow.protocol.*;
+import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.types.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +30,7 @@ public class RandomizerService implements IFloodlightModule, TarnService, IRando
 
     private OFPort lanport;
     private OFPort wanport;
-    
+
     private DatapathId rewriteSwitch = DatapathId.NONE;
 
     private IRestApiService restApiService;
@@ -44,6 +43,10 @@ public class RandomizerService implements IFloodlightModule, TarnService, IRando
     private List<Host> hosts;
 
     private FlowFactory flowFactory;
+    
+    private PrefixMappingHandler mappingHandler;
+
+    private List<Session> sessions;
 
     @Override
     public void addAutonomousSystem(AutonomousSystem as) {
@@ -129,6 +132,8 @@ public class RandomizerService implements IFloodlightModule, TarnService, IRando
         hosts = new ArrayList<>();
 
         flowFactory = new FlowFactoryImpl();
+        
+        mappingHandler = new PrefixMappingHandler();
     }
 
     @Override
@@ -175,47 +180,75 @@ public class RandomizerService implements IFloodlightModule, TarnService, IRando
         return l;
     }
 
+    /**
+     * The receive function is used to respond to PacketIn messages and determine whether or not TARN should act on them.
+     * <p>
+     * TARN will only respond to TCP connections that involve at least one TARN device.
+     *
+     * @param sw   the OpenFlow switch that sent this message
+     * @param msg  the message
+     * @param cntx a Floodlight message context object you can use to pass
+     *             information between listeners
+     * @return Command - whether to pass the message along or stop it here
+     */
     @Override
     public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
         if (msg.getType() == OFType.PACKET_IN) {
             OFPacketIn pi = (OFPacketIn) msg;
+            OFPort inPort = (pi.getVersion().compareTo(OFVersion.OF_12) < 0 ? pi.getInPort() : pi.getMatch().get(MatchField.IN_PORT));
             Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
-            
+
             if (eth.getEtherType() == EthType.IPv4) {
-                log.debug("IPv4 packet received");
                 IPv4 ipv4 = (IPv4) eth.getPayload();
-                
-                if (isTarnPacket(ipv4)) {
-                    log.debug("New TARN session packet received");
-                    // create TARN session?
+                if (ipv4.getProtocol() == IpProtocol.TCP) {
+                    TCP tcp = (TCP) ipv4.getPayload();
+                    /* If source or destination IP addresses belong to a TARN device, then get the out port using the mac and create a new session */
+                    if (mappingHandler.isTarnDevice(ipv4.getSourceAddress()) || mappingHandler.isTarnDevice(ipv4.getDestinationAddress())) {
+                        /* Get the device associated with the destination mac address */
+                        Iterator<? extends IDevice> iter = deviceService.queryDevices(eth.getDestinationMACAddress(), VlanVid.ZERO, IPv4Address.NONE,
+                                IPv6Address.NONE, DatapathId.NONE, OFPort.ZERO);
+                        if (iter.hasNext()) {
+                            IDevice nextHop = iter.next();
+                            /* Get the output port */
+                            for (SwitchPort switchPort : nextHop.getAttachmentPoints()) {
+                                if (switchPort.getNodeId().equals(sw.getId())) {
+                                    OFPort outPort = switchPort.getPortId();
+
+                                    // FIXME: This is just a placeholder. We don't really know if it's inbound or outbound yet
+                                    ConnectionAttributes inbound = ConnectionAttributes.builder()
+                                            .build();
+
+                                    ConnectionAttributes outbound = ConnectionAttributes.builder()
+                                            .build();
+
+                                    Session session = Session.builder()
+                                            .inbound(inbound)
+                                            .outbound(outbound)
+                                            .build();
+
+                                    sessions.add(session);
+                                }
+                            }
+                        }
+                    }
+
+                    return Command.STOP;
                 }
-                
-                return Command.CONTINUE;
-            } else if (eth.getEtherType() == EthType.IPv6) {
-                log.debug("IPv6 packet received");
-                IPv6 ipv6 = (IPv6) eth.getPayload();
-                
-                if(isTarnPacket(ipv6)) {
-                    log.debug("New TARN session packet received");
-                    // create TARN session?
-                }
-                
-                return Command.CONTINUE;
             }
-            
+
         }
-        
+
         return Command.CONTINUE;
     }
-    
+
     boolean isTarnPacket(IPv4 ipv4) {
         return false;
     }
-    
+
     boolean isTarnPacket(IPv6 ipv6) {
         return false;
     }
-    
+
     public void sendGratuitiousArp(Host host) {
         IPv4Address ip = host.getExternalAddress();
         Iterator<? extends IDevice> iterator = deviceService.queryDevices(MacAddress.NONE, VlanVid.ZERO, host.getInternalAddress(), IPv6Address.NONE, DatapathId.NONE, OFPort.ZERO);

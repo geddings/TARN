@@ -54,12 +54,12 @@ public class ConnectionAttributes {
     }
 
     public static class Builder {
-        IPv4Address srcIp = IPv4Address.NONE;
-        IPv4Address dstIp = IPv4Address.NONE;
-        TransportPort srcPort = TransportPort.NONE;
-        TransportPort dstPort = TransportPort.NONE;
-        OFPort inPort = OFPort.ANY;
-        OFPort outPort = OFPort.ANY;
+        private IPv4Address srcIp = IPv4Address.NONE;
+        private IPv4Address dstIp = IPv4Address.NONE;
+        private TransportPort srcPort = TransportPort.NONE;
+        private TransportPort dstPort = TransportPort.NONE;
+        private OFPort inPort = OFPort.ANY;
+        private OFPort outPort = OFPort.ANY;
 
         public Builder srcIp(IPv4Address srcIp) {
             this.srcIp = srcIp;

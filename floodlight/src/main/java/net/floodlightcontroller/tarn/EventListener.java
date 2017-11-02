@@ -33,7 +33,7 @@ public class EventListener {
     @Subscribe
     public void prefixChangeEvent(PrefixChangeEvent event) {
         log.info("{}", event);
-        FlowFactory.insertASRewriteFlows(event.getAS());
+        FlowFactoryImpl.insertASRewriteFlows(event.getAS());
         eventsHandled++;
     }
 
@@ -44,7 +44,7 @@ public class EventListener {
         randomizer.sendGratuitiousArp(host);
         Optional<AutonomousSystem> as = randomizer.getAutonomousSystem(host.getMemberAS());
         if (as.isPresent()) {
-            FlowFactory.insertHostRewriteFlows(event.getHost(), as.get());
+            FlowFactoryImpl.insertHostRewriteFlows(event.getHost(), as.get());
         } else {
             log.error("Host {} member AS {} not found.", host.getInternalAddress(), host.getMemberAS());
         }

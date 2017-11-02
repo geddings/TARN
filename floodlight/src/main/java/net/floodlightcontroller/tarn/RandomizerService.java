@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 /**
  * Created by geddingsbarrineau on 6/12/17.
  */
-public class RandomizerService implements IFloodlightModule, IRandomizerService, IOFSwitchListener, IOFMessageListener {
+public class RandomizerService implements IFloodlightModule, TarnService, IRandomizerService, IOFSwitchListener, IOFMessageListener {
     private static final Logger log = LoggerFactory.getLogger(RandomizerService.class);
 
     private OFPort lanport;
@@ -42,6 +42,8 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
 
     private List<AutonomousSystem> autonomousSystems;
     private List<Host> hosts;
+
+    private FlowFactory flowFactory;
 
     @Override
     public void addAutonomousSystem(AutonomousSystem as) {
@@ -95,7 +97,7 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
 
     @Override
     public void setLanPort(int portnumber) {
-        FlowFactory.setLanPort(portnumber);
+        FlowFactoryImpl.setLanPort(portnumber);
     }
 
     @Override
@@ -105,7 +107,7 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
 
     @Override
     public void setWanPort(int portnumber) {
-        FlowFactory.setWanPort(portnumber);
+        FlowFactoryImpl.setWanPort(portnumber);
     }
 
     @Override
@@ -125,6 +127,8 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
 
         autonomousSystems = new ArrayList<>();
         hosts = new ArrayList<>();
+
+        flowFactory = new FlowFactoryImpl();
     }
 
     @Override
@@ -133,7 +137,7 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
 
         parseConfigOptions(context.getConfigParams(this));
 
-        FlowFactory.setSwitchService(switchService);
+        FlowFactoryImpl.setSwitchService(switchService);
 
     }
 
@@ -258,7 +262,7 @@ public class RandomizerService implements IFloodlightModule, IRandomizerService,
 
     @Override
     public void switchAdded(DatapathId switchId) {
-        FlowFactory.setSwitch(switchId);
+        FlowFactoryImpl.setSwitch(switchId);
         rewriteSwitch = switchId;
     }
 

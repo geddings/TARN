@@ -42,7 +42,7 @@ public class EventListener {
         log.info("{}", event);
         Host host = event.getHost();
         randomizer.sendGratuitiousArp(host);
-        Optional<AutonomousSystem> as = randomizer.getAutonomousSystem(host.getMemberAS());
+        Optional<AutonomousSystem> as = Optional.empty();//randomizer.getAutonomousSystem(host.getMemberAS());
         if (as.isPresent()) {
             FlowFactoryImpl.insertHostRewriteFlows(event.getHost(), as.get());
         } else {

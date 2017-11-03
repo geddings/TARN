@@ -43,7 +43,7 @@ public class RandomizerService implements IFloodlightModule, TarnService, IRando
     private List<Host> hosts;
 
     private FlowFactory flowFactory;
-    
+
     private PrefixMappingHandler mappingHandler;
 
     private List<Session> sessions;
@@ -132,7 +132,7 @@ public class RandomizerService implements IFloodlightModule, TarnService, IRando
         hosts = new ArrayList<>();
 
         flowFactory = new FlowFactoryImpl();
-        
+
         mappingHandler = new PrefixMappingHandler();
     }
 
@@ -203,33 +203,68 @@ public class RandomizerService implements IFloodlightModule, TarnService, IRando
                 if (ipv4.getProtocol() == IpProtocol.TCP) {
                     TCP tcp = (TCP) ipv4.getPayload();
                     /* If source or destination IP addresses belong to a TARN device, then get the out port using the mac and create a new session */
-                    if (mappingHandler.isTarnDevice(ipv4.getSourceAddress()) || mappingHandler.isTarnDevice(ipv4.getDestinationAddress())) {
-                        /* Get the device associated with the destination mac address */
-                        Iterator<? extends IDevice> iter = deviceService.queryDevices(eth.getDestinationMACAddress(), VlanVid.ZERO, IPv4Address.NONE,
-                                IPv6Address.NONE, DatapathId.NONE, OFPort.ZERO);
-                        if (iter.hasNext()) {
-                            IDevice nextHop = iter.next();
-                            /* Get the output port */
-                            for (SwitchPort switchPort : nextHop.getAttachmentPoints()) {
-                                if (switchPort.getNodeId().equals(sw.getId())) {
-                                    OFPort outPort = switchPort.getPortId();
+                    if (mappingHandler.isTarnDevice(ipv4)) {
+                        Session.Builder session = Session.builder();
+                        ConnectionAttributes.Builder connection1 = ConnectionAttributes.builder();
+                        ConnectionAttributes.Builder connection2 = ConnectionAttributes.builder();
 
-                                    // FIXME: This is just a placeholder. We don't really know if it's inbound or outbound yet
-                                    ConnectionAttributes inbound = ConnectionAttributes.builder()
-                                            .build();
+                        /* Start filling in information about the two connections from the packet in message.
+                        *  Connection1 will always be the connection that the packet in message belongs to and
+                        *  Connection2 will always be the opposite connection. It can't yet be known which connection
+                        *  is inbound and which is outbound. */
+                        connection1.inPort(inPort)
+                                .srcIp(ipv4.getSourceAddress())
+                                .dstIp(ipv4.getDestinationAddress())
+                                .srcPort(tcp.getSourcePort())
+                                .dstPort(tcp.getDestinationPort());
 
-                                    ConnectionAttributes outbound = ConnectionAttributes.builder()
-                                            .build();
+                        connection2.outPort(inPort)
+                                .srcPort(tcp.getDestinationPort())
+                                .dstPort(tcp.getSourcePort());
 
-                                    Session session = Session.builder()
-                                            .inbound(inbound)
-                                            .outbound(outbound)
-                                            .build();
-
-                                    sessions.add(session);
-                                }
-                            }
+                        /* Get the output port and add it to the connections */
+                        Optional<SwitchPort> switchPort = getAttachmentPoint(eth.getDestinationMACAddress(), sw.getId());
+                        if (switchPort.isPresent()) {
+                            connection1.outPort(switchPort.get().getPortId());
+                            connection2.inPort(switchPort.get().getPortId());
                         }
+
+                        /* Using the source address of Connection1, determine the destination address of Connection2. */
+                        Optional<PrefixMapping> sourceMapping = mappingHandler.getAssociatedMapping(ipv4.getSourceAddress());
+                        if (sourceMapping.isPresent()) {
+                            if (sourceMapping.get().getInternalIp().equals(ipv4.getSourceAddress())) {
+                                connection2.dstIp(IPGenerator.getRandomAddressFrom(sourceMapping.get().getCurrentPrefix()));
+                            } else if (sourceMapping.get().getCurrentPrefix().contains(ipv4.getSourceAddress())) {
+                                connection2.dstIp(sourceMapping.get().getInternalIp());
+                            }
+                        } else {
+                            connection2.dstIp(ipv4.getSourceAddress());
+                        }
+
+                        /* Using the destination address of Connection1, determine the source address of Connection2. */
+                        Optional<PrefixMapping> destinationMapping = mappingHandler.getAssociatedMapping(ipv4.getDestinationAddress());
+                        if (destinationMapping.isPresent()) {
+                            if (destinationMapping.get().getInternalIp().equals(ipv4.getDestinationAddress())) {
+                                connection2.srcIp(IPGenerator.getRandomAddressFrom(destinationMapping.get().getCurrentPrefix()));
+                            } else if (destinationMapping.get().getCurrentPrefix().contains(ipv4.getDestinationAddress())) {
+                                connection2.srcIp(destinationMapping.get().getInternalIp());
+                            }
+                        } else {
+                            connection2.srcIp(ipv4.getDestinationAddress());
+                        }
+
+                        /* Determine which connection is inbound and which is outbound.
+                         * An outbound connection is one that will match on INTERNAL IP addresses.
+                         * An inbound connection is one that will match on EXTERNAL IP addresses. */
+                        if (mappingHandler.containsInternalIp(ipv4)) {
+                            session.outbound(connection1.build())
+                                    .inbound(connection2.build());
+                        } else {
+                            session.inbound(connection1.build())
+                                    .outbound(connection2.build());
+                        }
+
+                        sessions.add(session.build());
                     }
 
                     return Command.STOP;
@@ -239,6 +274,22 @@ public class RandomizerService implements IFloodlightModule, TarnService, IRando
         }
 
         return Command.CONTINUE;
+    }
+
+    Optional<SwitchPort> getAttachmentPoint(MacAddress macAddress, DatapathId dpid) {
+        /* Get the device associated with the destination mac address */
+        Iterator<? extends IDevice> iter = deviceService.queryDevices(macAddress, VlanVid.ZERO, IPv4Address.NONE,
+                IPv6Address.NONE, DatapathId.NONE, OFPort.ZERO);
+        if (iter.hasNext()) {
+            IDevice nextHop = iter.next();
+                            /* Get the output port */
+            for (SwitchPort switchPort : nextHop.getAttachmentPoints()) {
+                if (switchPort.getNodeId().equals(dpid)) {
+                    return Optional.of(switchPort);
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     boolean isTarnPacket(IPv4 ipv4) {

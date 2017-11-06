@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
  * Created by geddingsbarrineau on 5/28/17.
  * 
  */
+@Deprecated
 @JsonSerialize(using = AutonomousSystemSerializer.class)
 public class AutonomousSystem {
 

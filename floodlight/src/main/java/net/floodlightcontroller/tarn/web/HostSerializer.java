@@ -11,6 +11,7 @@ import java.io.IOException;
  * Created by geddingsbarrineau on 8/28/17.
  * 
  */
+@Deprecated
 public class HostSerializer extends JsonSerializer<Host> {
     @Override
     public void serialize(Host host, JsonGenerator jGen, SerializerProvider provider) throws IOException {

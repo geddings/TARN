@@ -1,19 +1,18 @@
 package net.floodlightcontroller.tarn.web;
 
-import java.io.IOException;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import net.floodlightcontroller.tarn.AutonomousSystem;
+import net.floodlightcontroller.tarn.IRandomizerService;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.Put;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import net.floodlightcontroller.tarn.AutonomousSystem;
-import net.floodlightcontroller.tarn.IRandomizerService;
+import java.io.IOException;
 
 /**
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 7/30/17.
  */
+@Deprecated
 public class AutonomousSystemsResource extends ServerResource {
 
     @Get

@@ -5,6 +5,13 @@ import org.projectfloodlight.openflow.types.OFPort;
 import org.projectfloodlight.openflow.types.TransportPort;
 
 /**
+ * Represents a TARN connection, which is one part of a TARN session. Because a TARN session will look different
+ * depending on where the observer is located (i.e. before or after IP rewrites), connection objects are used to
+ * differentiate.
+ *
+ * A connection is defined by an in port and out port, a source and destination IP address, and a source and destination
+ * TCP port.
+ *
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 11/2/17.
  */
 public class ConnectionAttributes {

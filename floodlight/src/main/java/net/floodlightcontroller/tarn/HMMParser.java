@@ -14,6 +14,7 @@ import java.util.List;
 /**
  * Created by geddingsbarrineau on 6/19/17.
  */
+@Deprecated
 public class HMMParser {
 
     public static HMM parseIntoHMM(String fileName) throws ParseException {

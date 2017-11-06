@@ -6,6 +6,7 @@ import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 /**
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 6/30/17.
  */
+@Deprecated
 public class PrefixChangeEvent {
 
     private final AutonomousSystem as;

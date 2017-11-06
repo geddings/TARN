@@ -9,6 +9,11 @@ import java.util.List;
  */
 public interface FlowFactory {
 
+    /**
+     * Given a session object, build a list of flows that will match on the entire session, and perform any necessary rewrites.
+     * @param session the session defines the matches and rewrite actions
+     * @return a list of flows that can be inserted
+     */
     List<OFMessage> buildFlows(Session session);
 
 }

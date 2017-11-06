@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
-
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 import org.slf4j.Logger;
@@ -15,6 +14,7 @@ import java.io.IOException;
 /**
  * Created by geddingsbarrineau on 2/1/17.
  */
+@Deprecated
 public class PrefixResource extends ServerResource {
     protected static Logger log = LoggerFactory.getLogger(PrefixResource.class);
     protected static final String STR_CURRENT = "current";

@@ -5,6 +5,7 @@ import net.floodlightcontroller.tarn.Host;
 /**
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 8/26/17.
  */
+@Deprecated
 public class HostChangeEvent {
 
     private final Host host;

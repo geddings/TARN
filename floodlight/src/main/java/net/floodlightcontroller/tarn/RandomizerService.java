@@ -89,7 +89,6 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
     @Override
     public Map<Class<? extends IFloodlightService>, IFloodlightService> getServiceImpls() {
         Map<Class<? extends IFloodlightService>, IFloodlightService> m = new HashMap<>();
-//        m.put(IRandomizerService.class, this);
         m.put(TarnService.class, this);
         return m;
     }
@@ -138,6 +137,15 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
         return Command.CONTINUE;
     }
 
+    /**
+     * Builds a new TARN session object based on the various payloads of a packet in maessage.
+     * @param sw the switch that the message was received on.
+     * @param inPort the port that the message was received on
+     * @param eth the ethernet payload of the packet in message
+     * @param ipv4 the ipv4 payload of the packet in message
+     * @param tcp the tcp payload of the packet in message
+     * @return a new session object
+     */
     Session buildSession(IOFSwitch sw, OFPort inPort, Ethernet eth, IPv4 ipv4, TCP tcp) {
         Session.Builder session = Session.builder();
         ConnectionAttributes.Builder connection1 = ConnectionAttributes.builder();
@@ -201,6 +209,12 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
         return session.build();
     }
 
+    /**
+     * Given the mac address of a device and the dpid of a switch, retrieves the attachment point, if one exists
+     * @param macAddress the mac address of the device
+     * @param dpid the dpid of the switch
+     * @return the optional attachment point of device (mac) on the switch (dpid)
+     */
     Optional<SwitchPort> getAttachmentPoint(MacAddress macAddress, DatapathId dpid) {
         /* Get the device associated with the destination mac address */
         Iterator<? extends IDevice> iter = deviceService.queryDevices(macAddress, VlanVid.ZERO, IPv4Address.NONE,

@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * A classes that parses and stores a file of pregenerated IP addresses and dwell times.
+ *
  * Created by geddingsbarrineau on 8/23/17.
  */
 public class IPParser {

@@ -1,24 +1,23 @@
 package net.floodlightcontroller.tarn.web;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Optional;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import net.floodlightcontroller.tarn.AutonomousSystem;
+import net.floodlightcontroller.tarn.IRandomizerService;
 import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 import org.restlet.resource.Delete;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.Put;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import net.floodlightcontroller.tarn.AutonomousSystem;
-import net.floodlightcontroller.tarn.IRandomizerService;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Optional;
 
 /**
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 7/31/17.
  */
+@Deprecated
 public class AutonomousSystemResource extends ServerResource {
 
     @Get

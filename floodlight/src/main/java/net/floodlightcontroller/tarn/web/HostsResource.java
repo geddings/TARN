@@ -12,6 +12,7 @@ import java.io.IOException;
 /**
  * Created by geddingsbarrineau on 8/28/17.
  */
+@Deprecated
 public class HostsResource extends ServerResource {
 
     @Get

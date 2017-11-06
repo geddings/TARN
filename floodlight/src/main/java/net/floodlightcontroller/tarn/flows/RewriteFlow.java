@@ -20,6 +20,7 @@ import java.util.List;
 /**
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 7/30/17.
  */
+@Deprecated
 public class RewriteFlow {
 
     private OFFactory factory = OFFactories.getFactory(OFVersion.OF_15);

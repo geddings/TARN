@@ -10,6 +10,7 @@ import java.util.Optional;
  * Created by geddingsbarrineau on 9/19/16.
  *
  */
+@Deprecated
 public interface IRandomizerService extends IFloodlightService {
 
     void addAutonomousSystem(AutonomousSystem as);

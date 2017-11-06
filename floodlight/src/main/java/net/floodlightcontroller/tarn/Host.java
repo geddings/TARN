@@ -18,9 +18,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * This class is deprecated and will be removed.
+ *
  * Created by geddingsbarrineau on 8/24/17.
  * 
  */
+@Deprecated
 @JsonSerialize(using = HostSerializer.class)
 public class Host {
     private static final Logger log = LoggerFactory.getLogger(Host.class);

@@ -1,20 +1,12 @@
 package net.floodlightcontroller.tarn.web;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.MappingJsonFactory;
-
-import org.projectfloodlight.openflow.types.IPv4Address;
-import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 /**
  * Created by geddingsbarrineau on 9/21/16.
  */
+@Deprecated
 public class ServerResource extends org.restlet.resource.ServerResource {
     protected static Logger log = LoggerFactory.getLogger(ServerResource.class);
     protected static final String STR_OPERATION_ADD = "add";

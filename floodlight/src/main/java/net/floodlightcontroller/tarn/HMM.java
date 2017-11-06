@@ -2,13 +2,12 @@ package net.floodlightcontroller.tarn;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
  * Created by geddingsbarrineau on 6/19/17.
- * j
  */
+@Deprecated
 public class HMM {
     final protected BigDecimal complexity;
     final protected BigDecimal entropyRate;

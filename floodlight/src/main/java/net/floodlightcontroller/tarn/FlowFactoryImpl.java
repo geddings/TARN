@@ -27,23 +27,25 @@ import java.util.concurrent.Executors;
  * The Flow Factory is intended to take all responsibility for creating
  * the correct matches and actions for all the different types of flows
  * needed for the Randomizer.
+ *
+ * With the new session-based approach, this class will no longer be responsible for writing the flows out to a switch.
+ * It will be completely stateless, and will only generate flows for different object, like a Session.
  * <p>
  * Created by geddingsbarrineau on 12/13/16.
  */
 public class FlowFactoryImpl implements FlowFactory {
     private static final Logger log = LoggerFactory.getLogger(FlowFactoryImpl.class);
 
+    /* TODO: REMOVE THESE */
     private static final ExecutorService executorService = Executors.newFixedThreadPool(1);
     private static DatapathId sw = DatapathId.NONE;
     private static IOFSwitchService switchService = null;
+    private static OFPort WAN_PORT = OFPort.of(2);
+    private static OFPort LAN_PORT = OFPort.of(1);
+    private static Boolean default_flows_set = false;
 
     /* We have to use OF15 in order to rewrite prefixes */
     private final OFFactory factory = OFFactories.getFactory(OFVersion.OF_15);
-
-    private static OFPort WAN_PORT = OFPort.of(2);
-    private static OFPort LAN_PORT = OFPort.of(1);
-
-    private static Boolean default_flows_set = false;
 
     @Override
     public List<OFMessage> buildFlows(Session session) {
@@ -112,14 +114,17 @@ public class FlowFactoryImpl implements FlowFactory {
         return actions;
     }
 
+    @Deprecated
     public static void setSwitch(DatapathId sw) {
         FlowFactoryImpl.sw = sw;
     }
 
+    @Deprecated
     public static void setSwitchService(IOFSwitchService switchService) {
         FlowFactoryImpl.switchService = switchService;
     }
 
+    @Deprecated
     static void setLanPort(int portNumber) {
         try {
             LAN_PORT = OFPort.of(portNumber);
@@ -129,6 +134,7 @@ public class FlowFactoryImpl implements FlowFactory {
         }
     }
 
+    @Deprecated
     static void setWanPort(int portNumber) {
         try {
             WAN_PORT = OFPort.of(portNumber);
@@ -138,6 +144,7 @@ public class FlowFactoryImpl implements FlowFactory {
         }
     }
 
+    @Deprecated
     static void insertDefaultFlows() {
         if (sw.equals(DatapathId.NONE)) {
             log.error("Unable to insert default flows. Switch DPID is not yet configured. Is it connected?");
@@ -175,12 +182,14 @@ public class FlowFactoryImpl implements FlowFactory {
         }
     }
 
+    @Deprecated
     private static List<OFInstruction> getInstructions() {
         List<OFInstruction> instructions = new ArrayList<>();
         instructions.add(OFFactories.getFactory(OFVersion.OF_15).instructions().buildGotoTable().setTableId(TableId.of(1)).build());
         return instructions;
     }
 
+    @Deprecated
     static void insertASRewriteFlows(AutonomousSystem as) {
         Runnable task = () -> {
             if (sw.equals(DatapathId.NONE)) {
@@ -207,6 +216,7 @@ public class FlowFactoryImpl implements FlowFactory {
         executorService.execute(task);
     }
 
+    @Deprecated
     private static List<OFMessage> getASFlows(AutonomousSystem as) {
         List<OFMessage> flows = new ArrayList<>();
         flows.add(RewriteFlow.builder().as(as).ethType(EthType.IPv4).source().encrypt().inPort(LAN_PORT).outPort(WAN_PORT).build().getFlow());
@@ -220,6 +230,7 @@ public class FlowFactoryImpl implements FlowFactory {
         return flows;
     }
 
+    @Deprecated
     static void insertHostRewriteFlows(Host host, AutonomousSystem as) {
         Runnable task = () -> {
             if (sw.equals(DatapathId.NONE)) {
@@ -246,6 +257,7 @@ public class FlowFactoryImpl implements FlowFactory {
         executorService.execute(task);
     }
 
+    @Deprecated
     private static List<OFMessage> getHostFlows(Host host, AutonomousSystem as) {
         List<OFMessage> flows = new ArrayList<>();
         flows.add(RewriteFlow.builder().host(host).as(as).ethType(EthType.IPv4).source().encrypt().inPort(LAN_PORT).outPort(WAN_PORT).build().getFlow());

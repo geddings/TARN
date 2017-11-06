@@ -8,29 +8,44 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
+ * This class is responsible for maintaining all of the current prefix mappings needed for TARN.
+ *
  * Created by @geddings on 11/2/17.
  */
-public class PrefixMappingHandler {
+class PrefixMappingHandler {
 
     private Map<IPv4Address, PrefixMapping> prefixMappings;
 
-    public PrefixMappingHandler() {
+    PrefixMappingHandler() {
         prefixMappings = new HashMap<>();
     }
 
-    public void addMapping(PrefixMapping mapping) {
+    /**
+     * Adds a prefix mapping for a TARN device. If a prefix mapping already exists for that device, the existing mapping
+     * will be overwritten by the newly added mapping.
+     *
+     * @param mapping the prefix mapping to add
+     */
+    void addMapping(PrefixMapping mapping) {
         prefixMappings.put(mapping.getInternalIp(), mapping);
     }
 
-    public void removeMapping(IPv4Address internalIp) {
+    void removeMapping(IPv4Address internalIp) {
         prefixMappings.remove(internalIp);
     }
 
-    public Optional<PrefixMapping> getMapping(IPv4Address internalIp) {
+    Optional<PrefixMapping> getMapping(IPv4Address internalIp) {
         return Optional.ofNullable(prefixMappings.get(internalIp));
     }
 
-    public Optional<PrefixMapping> getAssociatedMapping(IPv4Address iPv4Address) {
+    /**
+     * Returns a mapping associated with the given IP address, if it exists. A mapping is associated if the IP address
+     * corresponds to an internal IP or is a part of an external prefix range in any of the existing mappings.
+     *
+     * @param iPv4Address the IP address associated with a prefix mapping
+     * @return an optional prefix mapping
+     */
+    Optional<PrefixMapping> getAssociatedMapping(IPv4Address iPv4Address) {
         if (isInternalIp(iPv4Address)) {
             return Optional.of(prefixMappings.get(iPv4Address));
         } else if (isExternalIp(iPv4Address)) {
@@ -42,25 +57,31 @@ public class PrefixMappingHandler {
         }
     }
 
-    public Boolean isTarnDevice(IPv4 iPv4) {
+    /**
+     * Returns true if the IPv4 packet contains an IP address that is associated with a TARN device, whether internal or
+     * external.
+     * @param iPv4 the packet in question
+     * @return true if the packet is associated with at least one TARN device
+     */
+    Boolean isTarnDevice(IPv4 iPv4) {
         return containsInternalIp(iPv4) || containsExternalIp(iPv4);
     }
 
-    public Boolean isInternalIp(IPv4Address iPv4Address) {
+    Boolean isInternalIp(IPv4Address iPv4Address) {
         return prefixMappings.containsKey(iPv4Address);
     }
 
-    public Boolean isExternalIp(IPv4Address iPv4Address) {
+    Boolean isExternalIp(IPv4Address iPv4Address) {
         return prefixMappings.values().stream()
                 .map(PrefixMapping::getCurrentPrefix)
                 .anyMatch(prefix -> prefix.contains(iPv4Address));
     }
 
-    public Boolean containsInternalIp(IPv4 iPv4) {
+    Boolean containsInternalIp(IPv4 iPv4) {
         return isInternalIp(iPv4.getSourceAddress()) || isInternalIp(iPv4.getDestinationAddress());
     }
 
-    public Boolean containsExternalIp(IPv4 iPv4) {
+    Boolean containsExternalIp(IPv4 iPv4) {
         return isExternalIp(iPv4.getSourceAddress()) || isExternalIp(iPv4.getDestinationAddress());
     }
 }

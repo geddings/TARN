@@ -30,7 +30,7 @@ def serverConnectPEERing():
     # Server-side Parameters for PEERING setup
     quagga_node = 'quaggaS'
     openvpn_tap_device = "tap5"
-    openvpn_tap_ip = '100.69.128.9'
+    openvpn_tap_ip = '100.69.128.7'
     ovs_peering_quagga = 'sw2'
 
     # Server-side Parameters for end-to-end routing communication
@@ -40,7 +40,6 @@ def serverConnectPEERing():
     server_ip = '10.0.0.1'
     server_gw = quaggaS_facing_server
     server_static_route = 'route add -net 184.164.243.0 netmask 255.255.255.0 gw 10.0.0.1 quaggaS-eth0'
-
 
     info('** Connecting Server Side Quagga to PEERing testbed ... \n')
     # Network topology setup
@@ -99,7 +98,7 @@ def clientConnectPEERing():
     # Client-side Parameters for PEERING setup
     quagga_node = 'quaggaC'
     openvpn_tap_device = "tap1"
-    openvpn_tap_ip = '100.65.128.6'
+    openvpn_tap_ip = '100.65.128.5'
     ovs_peering_quagga = 'sw3'
 
     # Client-side Parameters for end-to-end routing communication
@@ -175,8 +174,12 @@ def startNetwork():
     serverConnectPEERing()
     clientConnectPEERing()
 
+    client, server = net.getNodeByName('client', 'server')
+    net.iperf((client, server), l4Type='TCP')
+
     info('** Running CLI\n')
     CLI(net)
+
 
 
 def stopNetwork():

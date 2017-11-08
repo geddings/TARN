@@ -3,6 +3,7 @@ package net.floodlightcontroller.tarn;
 import net.floodlightcontroller.packet.IPv4;
 import org.projectfloodlight.openflow.types.IPv4Address;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -38,6 +39,10 @@ class PrefixMappingHandler {
         return Optional.ofNullable(prefixMappings.get(internalIp));
     }
 
+    Collection<PrefixMapping> getMappings() {
+        return prefixMappings.values();
+    }
+    
     /**
      * Returns a mapping associated with the given IP address, if it exists. A mapping is associated if the IP address
      * corresponds to an internal IP or is a part of an external prefix range in any of the existing mappings.

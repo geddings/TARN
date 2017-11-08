@@ -17,8 +17,13 @@ import net.floodlightcontroller.packet.ARP;
 import net.floodlightcontroller.packet.Ethernet;
 import net.floodlightcontroller.packet.IPv4;
 import net.floodlightcontroller.packet.TCP;
-import org.projectfloodlight.openflow.protocol.*;
-import org.projectfloodlight.openflow.protocol.match.MatchField;
+import net.floodlightcontroller.restserver.IRestApiService;
+import net.floodlightcontroller.tarn.web.RandomizerWebRoutable;
+import net.floodlightcontroller.util.OFMessageUtils;
+import org.projectfloodlight.openflow.protocol.OFMessage;
+import org.projectfloodlight.openflow.protocol.OFPacketIn;
+import org.projectfloodlight.openflow.protocol.OFPacketOut;
+import org.projectfloodlight.openflow.protocol.OFType;
 import org.projectfloodlight.openflow.types.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +38,7 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
 
     private DatapathId rewriteSwitch = DatapathId.NONE;
 
-//    private IRestApiService restApiService;
+    private IRestApiService restApiService;
     private IOFSwitchService switchService;
     private IDeviceService deviceService;
 
@@ -46,7 +51,18 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
     private List<Session> sessions;
 
     @Override
+    public Collection<PrefixMapping> getPrefixMappings() {
+        return mappingHandler.getMappings();
+    }
+
+    @Override
+    public void addPrefixMapping(PrefixMapping mapping) {
+        mappingHandler.addMapping(mapping);
+    }
+
+    @Override
     public void init(FloodlightModuleContext context) throws FloodlightModuleException {
+        restApiService = context.getServiceImpl(IRestApiService.class);
         switchService = context.getServiceImpl(IOFSwitchService.class);
         deviceService = context.getServiceImpl(IDeviceService.class);
         
@@ -63,7 +79,7 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
 
     @Override
     public void startUp(FloodlightModuleContext context) throws FloodlightModuleException {
-//        restApiService.addRestletRoutable(new RandomizerWebRoutable());
+        restApiService.addRestletRoutable(new RandomizerWebRoutable());
 
 //        parseConfigOptions(context.getConfigParams(this));
 
@@ -116,7 +132,10 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
     public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
         if (msg.getType() == OFType.PACKET_IN) {
             OFPacketIn pi = (OFPacketIn) msg;
-            OFPort inPort = (pi.getVersion().compareTo(OFVersion.OF_12) < 0 ? pi.getInPort() : pi.getMatch().get(MatchField.IN_PORT));
+            DatapathId srcSw = sw.getId();
+            OFPort srcPort = OFMessageUtils.getInPort(pi);
+            IDevice srcDevice = IDeviceService.fcStore.get(cntx, IDeviceService.CONTEXT_SRC_DEVICE);
+            IDevice dstDevice = IDeviceService.fcStore.get(cntx, IDeviceService.CONTEXT_DST_DEVICE);
             Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
 
             if (eth.getEtherType() == EthType.IPv4) {
@@ -125,7 +144,7 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
                     TCP tcp = (TCP) ipv4.getPayload();
                     /* If source or destination IP addresses belong to a TARN device, then create a new session */
                     if (mappingHandler.isTarnDevice(ipv4)) {
-                        Session session = buildSession(sw, inPort, eth, ipv4, tcp);
+                        Session session = buildSession(sw, srcPort, eth, ipv4, tcp);
                         sessions.add(session);
                         return Command.STOP;
                     }
@@ -138,7 +157,7 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
     }
 
     /**
-     * Builds a new TARN session object based on the various payloads of a packet in maessage.
+     * Builds a new TARN session object based on the various payloads of a packet in message.
      * @param sw the switch that the message was received on.
      * @param inPort the port that the message was received on
      * @param eth the ethernet payload of the packet in message
@@ -221,7 +240,7 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
                 IPv6Address.NONE, DatapathId.NONE, OFPort.ZERO);
         if (iter.hasNext()) {
             IDevice nextHop = iter.next();
-                            /* Get the output port */
+            /* Get the output port */
             for (SwitchPort switchPort : nextHop.getAttachmentPoints()) {
                 if (switchPort.getNodeId().equals(dpid)) {
                     return Optional.of(switchPort);

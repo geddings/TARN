@@ -25,7 +25,7 @@ public class PrefixMappingHandlerTest {
 
     @Test
     public void getAssociatedMapping() throws Exception {
-        PrefixMapping mapping = new PrefixMapping(IPv4Address.of("10.0.0.1"), IPv4AddressWithMask.of("50.0.0.0/24"));
+        PrefixMapping mapping = new PrefixMapping("10.0.0.1", "50.0.0.0/24");
 
         mappingHandler.addMapping(mapping);
 
@@ -45,7 +45,7 @@ public class PrefixMappingHandlerTest {
         IPv4AddressWithMask externalPrefix = IPv4AddressWithMask.of("50.0.0.0/24");
         IPv4Address external = IPv4Address.of("50.0.0.77");
 
-        PrefixMapping mapping = new PrefixMapping(internal, externalPrefix);
+        PrefixMapping mapping = new PrefixMapping(internal.toString(), externalPrefix.toString());
         mappingHandler.addMapping(mapping);
 
         IPv4 outboundIPv4 = new IPv4().setSourceAddress(internal).setDestinationAddress("20.0.0.1");
@@ -57,7 +57,7 @@ public class PrefixMappingHandlerTest {
 
     @Test
     public void testIsInternalIp() throws Exception {
-        mappingHandler.addMapping(new PrefixMapping(IPv4Address.of("10.0.0.1"), IPv4AddressWithMask.of("50.0.0.0/24")));
+        mappingHandler.addMapping(new PrefixMapping("10.0.0.1", "50.0.0.0/24"));
 
         Assert.assertTrue(mappingHandler.isInternalIp(IPv4Address.of("10.0.0.1")));
         Assert.assertFalse(mappingHandler.isInternalIp(IPv4Address.of("50.0.0.1")));
@@ -65,7 +65,7 @@ public class PrefixMappingHandlerTest {
 
     @Test
     public void testIsExternalIp() throws Exception {
-        mappingHandler.addMapping(new PrefixMapping(IPv4Address.of("10.0.0.1"), IPv4AddressWithMask.of("50.0.0.0/24")));
+        mappingHandler.addMapping(new PrefixMapping("10.0.0.1", "50.0.0.0/24"));
 
         Assert.assertFalse(mappingHandler.isExternalIp(IPv4Address.of("10.0.0.1")));
         Assert.assertTrue(mappingHandler.isExternalIp(IPv4Address.of("50.0.0.1")));
@@ -73,7 +73,7 @@ public class PrefixMappingHandlerTest {
 
     @Test
     public void testContainsInternalIp() throws Exception {
-        mappingHandler.addMapping(new PrefixMapping(IPv4Address.of("10.0.0.1"), IPv4AddressWithMask.of("50.0.0.0/24")));
+        mappingHandler.addMapping(new PrefixMapping("10.0.0.1", "50.0.0.0/24"));
 
         IPv4 iPv4 = new IPv4().setSourceAddress("10.0.0.1")
                 .setDestinationAddress("20.0.0.1");
@@ -83,7 +83,7 @@ public class PrefixMappingHandlerTest {
 
     @Test
     public void testContainsExternalIp() throws Exception {
-        mappingHandler.addMapping(new PrefixMapping(IPv4Address.of("10.0.0.1"), IPv4AddressWithMask.of("50.0.0.0/24")));
+        mappingHandler.addMapping(new PrefixMapping("10.0.0.1", "50.0.0.0/24"));
 
         IPv4 iPv4 = new IPv4().setSourceAddress("20.0.0.1")
                 .setDestinationAddress("50.0.0.1");

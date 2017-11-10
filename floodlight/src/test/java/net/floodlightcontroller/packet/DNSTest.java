@@ -108,7 +108,7 @@ public class DNSTest {
                 .setQuestions(1)
                 .addQuery(new DNS.Query("clemson.edu"));
 
-        DNS queryActual = (DNS) new DNS().deserialize(dnsClemsonQuery);
+        DNS queryActual = (DNS) new DNS().deserialize(dnsClemsonQuery, 0);
 
         Assert.assertEquals(queryExpected, queryActual);
     }
@@ -125,7 +125,7 @@ public class DNSTest {
                 .addQuery(new DNS.Query("clemson.edu"))
                 .addAnswer(new DNS.Answer("clemson.edu", DNS.RRTYPE.A, DNS.RRCLASS.IN, 105, (short) 4, "130.127.204.30"));
 
-        DNS responseActual = (DNS) new DNS().deserialize(dnsClemsonResponse);
+        DNS responseActual = (DNS) new DNS().deserialize(dnsClemsonResponse, 0);
 
         Assert.assertEquals(responseExpected, responseActual);
     }

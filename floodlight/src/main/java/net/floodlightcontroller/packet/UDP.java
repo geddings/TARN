@@ -17,13 +17,13 @@
 
 package net.floodlightcontroller.packet;
 
+import org.projectfloodlight.openflow.types.IpProtocol;
+import org.projectfloodlight.openflow.types.TransportPort;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.projectfloodlight.openflow.types.IpProtocol;
-import org.projectfloodlight.openflow.types.TransportPort;
 
 /**
  *
@@ -31,6 +31,7 @@ import org.projectfloodlight.openflow.types.TransportPort;
  */
 public class UDP extends BasePacket {
     public static Map<TransportPort, Class<? extends IPacket>> decodeMap;
+    public static final TransportPort DNS_PORT = TransportPort.of(53);
     public static final TransportPort DHCP_CLIENT_PORT = TransportPort.of(68);
     public static final TransportPort DHCP_SERVER_PORT = TransportPort.of(67);
     static {
@@ -40,7 +41,7 @@ public class UDP extends BasePacket {
          */
         UDP.decodeMap.put(DHCP_CLIENT_PORT, DHCP.class);
         UDP.decodeMap.put(DHCP_SERVER_PORT, DHCP.class);
-
+        UDP.decodeMap.put(DNS_PORT, DNS.class);
     }
 
     protected TransportPort sourcePort;

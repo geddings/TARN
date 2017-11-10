@@ -94,6 +94,46 @@ public class DNS extends BasePacket {
         return this;
     }
 
+    public Short getTransactionId() {
+        return transactionId;
+    }
+
+    public Short getFlags() {
+        return flags;
+    }
+
+    public Short getQuestions() {
+        return questions;
+    }
+
+    public Short getAnswerRRs() {
+        return answerRRs;
+    }
+
+    public Short getAuthorityRRs() {
+        return authorityRRs;
+    }
+
+    public Short getAdditionalRRs() {
+        return additionalRRs;
+    }
+
+    public List<Query> getQueries() {
+        return queries;
+    }
+
+    public List<Answer> getAnswers() {
+        return answers;
+    }
+
+    public List<Authority> getAuthorities() {
+        return authorities;
+    }
+
+    public List<Additional> getAdditionals() {
+        return additionals;
+    }
+
     @Override
     public byte[] serialize() {
         int packetSize = 0;
@@ -130,11 +170,11 @@ public class DNS extends BasePacket {
 
     @Override
     public IPacket deserialize(byte[] data, int offset, int length) throws PacketParsingException {
-        return null;
+        return deserialize(data, offset);
     }
 
-    public IPacket deserialize(byte[] data) throws PacketParsingException {
-        ByteArrayDataInput badi = ByteStreams.newDataInput(data);
+    public IPacket deserialize(byte[] data, int start) throws PacketParsingException {
+        ByteArrayDataInput badi = ByteStreams.newDataInput(data, start);
         this.transactionId = badi.readShort();
         this.flags = badi.readShort();
         this.questions = badi.readShort();
@@ -198,9 +238,9 @@ public class DNS extends BasePacket {
     }
 
     public static class Query {
-        String queryDomainName;
-        short queryType;
-        short queryClass;
+        public String queryDomainName;
+        public short queryType;
+        public short queryClass;
 
         public Query(String queryDomainName, short queryType, short queryClass) {
             this.queryDomainName = queryDomainName;

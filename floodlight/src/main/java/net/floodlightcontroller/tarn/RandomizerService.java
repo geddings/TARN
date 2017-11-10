@@ -1,5 +1,6 @@
 package net.floodlightcontroller.tarn;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.eventbus.EventBus;
 import net.floodlightcontroller.core.FloodlightContext;
 import net.floodlightcontroller.core.IFloodlightProviderService;
@@ -13,10 +14,7 @@ import net.floodlightcontroller.core.module.IFloodlightService;
 import net.floodlightcontroller.devicemanager.IDevice;
 import net.floodlightcontroller.devicemanager.IDeviceService;
 import net.floodlightcontroller.devicemanager.SwitchPort;
-import net.floodlightcontroller.packet.ARP;
-import net.floodlightcontroller.packet.Ethernet;
-import net.floodlightcontroller.packet.IPv4;
-import net.floodlightcontroller.packet.TCP;
+import net.floodlightcontroller.packet.*;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.tarn.web.RandomizerWebRoutable;
 import net.floodlightcontroller.util.OFMessageUtils;
@@ -24,6 +22,7 @@ import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFPacketIn;
 import org.projectfloodlight.openflow.protocol.OFPacketOut;
 import org.projectfloodlight.openflow.protocol.OFType;
+import org.projectfloodlight.openflow.protocol.action.OFActionOutput;
 import org.projectfloodlight.openflow.types.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +37,7 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
 
     private DatapathId rewriteSwitch = DatapathId.NONE;
 
+    private IFloodlightProviderService floodlightProviderService;
     private IRestApiService restApiService;
     private IOFSwitchService switchService;
     private IDeviceService deviceService;
@@ -62,6 +62,7 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
 
     @Override
     public void init(FloodlightModuleContext context) throws FloodlightModuleException {
+        floodlightProviderService = context.getServiceImpl(IFloodlightProviderService.class);
         restApiService = context.getServiceImpl(IRestApiService.class);
         switchService = context.getServiceImpl(IOFSwitchService.class);
         deviceService = context.getServiceImpl(IDeviceService.class);
@@ -79,7 +80,10 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
 
     @Override
     public void startUp(FloodlightModuleContext context) throws FloodlightModuleException {
+        floodlightProviderService.addOFMessageListener(OFType.PACKET_IN, this);
         restApiService.addRestletRoutable(new RandomizerWebRoutable());
+
+        log.info("TARN is starting up!");
 
 //        parseConfigOptions(context.getConfigParams(this));
 
@@ -112,6 +116,7 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
     @Override
     public Collection<Class<? extends IFloodlightService>> getModuleDependencies() {
         Collection<Class<? extends IFloodlightService>> l = new ArrayList<>();
+        l.add(IFloodlightProviderService.class);
         l.add(IOFSwitchService.class);
         l.add(IDeviceService.class);
         return l;
@@ -130,7 +135,9 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
      */
     @Override
     public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
+        log.info("Is this being called?");
         if (msg.getType() == OFType.PACKET_IN) {
+            log.info("Received packet in");
             OFPacketIn pi = (OFPacketIn) msg;
             DatapathId srcSw = sw.getId();
             OFPort srcPort = OFMessageUtils.getInPort(pi);
@@ -148,6 +155,18 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
                         sessions.add(session);
                         return Command.STOP;
                     }
+                } else if (ipv4.getProtocol() == IpProtocol.UDP) {
+                    log.info("UDP packet received");
+                    UDP udp = (UDP) ipv4.getPayload();
+                    if (udp.getSourcePort().getPort() == 53 || udp.getDestinationPort().getPort() == 53) {
+                        log.info("DNS packet received");
+                        DNS dns = (DNS) udp.getPayload();
+                        log.info(dns.toString());
+                        
+                        OFPacketOut dnsResponse = buildDNSResponse(srcPort, sw, eth, ipv4, udp, dns);
+                        log.info(dnsResponse.toString());
+                        sw.write(dnsResponse);
+                    }
                 }
             }
 
@@ -156,13 +175,52 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
         return Command.CONTINUE;
     }
 
+    private OFPacketOut buildDNSResponse(OFPort inport, IOFSwitch sw, Ethernet ethIn, IPv4 iPv4In, UDP udpIn, DNS dnsIn) {
+        Ethernet eth = new Ethernet()
+                .setEtherType(EthType.IPv4)
+                .setSourceMACAddress(ethIn.getDestinationMACAddress())
+                .setDestinationMACAddress(ethIn.getSourceMACAddress());
+        
+        IPv4 iPv4 = new IPv4()
+                .setSourceAddress(iPv4In.getDestinationAddress())
+                .setDestinationAddress(iPv4In.getSourceAddress());
+        
+        UDP udp = new UDP()
+                .setSourcePort(udpIn.getDestinationPort())
+                .setDestinationPort(udpIn.getSourcePort());
+
+        DNS.Query query = dnsIn.getQueries().get(0);
+        DNS dns = new DNS()
+                .setTransactionId(dnsIn.getTransactionId())
+                .setFlags((short) 0x8180)
+                .setQuestions(dnsIn.getQuestions())
+                .setAnswerRRs(dnsIn.getQuestions())
+                .addQuery(query)
+                .addAnswer(new DNS.Answer(query.queryDomainName, DNS.RRTYPE.A, DNS.RRCLASS.IN, 0, (short) 4, "10.0.0.2"));
+
+        udp.setPayload(dns);
+        iPv4.setPayload(udp);
+        eth.setPayload(iPv4);
+        
+        OFActionOutput output = sw.getOFFactory().actions().buildOutput().setPort(inport).build();
+        
+        OFPacketOut packetOut = sw.getOFFactory().buildPacketOut()
+                .setData(eth.serialize())
+                .setBufferId(OFBufferId.NO_BUFFER)
+                .setActions(ImmutableList.of(output))
+                .build();
+        
+        return packetOut;
+    }
+
     /**
      * Builds a new TARN session object based on the various payloads of a packet in message.
-     * @param sw the switch that the message was received on.
+     *
+     * @param sw     the switch that the message was received on.
      * @param inPort the port that the message was received on
-     * @param eth the ethernet payload of the packet in message
-     * @param ipv4 the ipv4 payload of the packet in message
-     * @param tcp the tcp payload of the packet in message
+     * @param eth    the ethernet payload of the packet in message
+     * @param ipv4   the ipv4 payload of the packet in message
+     * @param tcp    the tcp payload of the packet in message
      * @return a new session object
      */
     private Session buildSession(IOFSwitch sw, OFPort inPort, Ethernet eth, IPv4 ipv4, TCP tcp) {
@@ -230,8 +288,9 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
 
     /**
      * Given the mac address of a device and the dpid of a switch, retrieves the attachment point, if one exists
+     *
      * @param macAddress the mac address of the device
-     * @param dpid the dpid of the switch
+     * @param dpid       the dpid of the switch
      * @return the optional attachment point of device (mac) on the switch (dpid)
      */
     Optional<SwitchPort> getAttachmentPoint(MacAddress macAddress, DatapathId dpid) {

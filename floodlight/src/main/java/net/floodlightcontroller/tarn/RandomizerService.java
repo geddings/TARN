@@ -165,7 +165,7 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
      * @param tcp the tcp payload of the packet in message
      * @return a new session object
      */
-    Session buildSession(IOFSwitch sw, OFPort inPort, Ethernet eth, IPv4 ipv4, TCP tcp) {
+    private Session buildSession(IOFSwitch sw, OFPort inPort, Ethernet eth, IPv4 ipv4, TCP tcp) {
         Session.Builder session = Session.builder();
         ConnectionAttributes.Builder connection1 = ConnectionAttributes.builder();
         ConnectionAttributes.Builder connection2 = ConnectionAttributes.builder();

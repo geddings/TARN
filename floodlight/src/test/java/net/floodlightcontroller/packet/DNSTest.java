@@ -1,12 +1,9 @@
 package net.floodlightcontroller.packet;
 
-import com.google.common.collect.ImmutableMap;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * Created by @geddings on 11/9/17.
@@ -26,8 +23,17 @@ public class DNSTest {
             0x70, 0x05, 0x67, 0x6d, 0x61, 0x69, 0x6c, 0x03,
             0x63, 0x6f, 0x6d, 0x00, 0x00, 0x01, 0x00, 0x01
     };
-    
+
     private byte[] dnsClemsonResponse = new byte[] {
+            (byte) 0xa1, 0x5a, (byte) 0x81, (byte) 0x80, 0x00, 0x01, 0x00, 0x01,
+            0x00, 0x00, 0x00, 0x00, 0x07, 0x63, 0x6c, 0x65,
+            0x6d, 0x73, 0x6f, 0x6e, 0x03, 0x65, 0x64, 0x75,
+            0x00, 0x00, 0x01, 0x00, 0x01, (byte) 0xc0, 0x0c, 0x00,
+            0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x69, 0x00,
+            0x04, (byte) 0x82, 0x7f, (byte) 0xcc, 0x1e
+    };
+    
+    private byte[] dnsClemsonLongResponse = new byte[] {
             (byte) 0x87, (byte) 0xf0, (byte) 0x85, (byte) 0x80, 0x00, 0x01, 0x00, 0x01,
             0x00, 0x03, 0x00, 0x05, 0x07, 0x63, 0x6c, 0x65,
             0x6d, 0x73, 0x6f, 0x6e, 0x03, 0x65, 0x64, 0x75,
@@ -81,40 +87,46 @@ public class DNSTest {
     @Test
     public void testResponseSerialization() {
         byte[] dnsResponse = new DNS()
-                .setTransactionId((short) 0x87f0)
-                .setFlags((short) 0x8580)
+                .setTransactionId((short) 0xa15a)
+                .setFlags((short) 0x8180)
                 .setQuestions(1)
                 .setAnswerRRs(1)
-                .setAuthorityRRs(3)
-                .setAdditionalRRs(5)
+                .setAuthorityRRs(0)
+                .setAdditionalRRs(0)
                 .addQuery(new DNS.Query("clemson.edu"))
-                .addAnswer(new DNS.Answer("clemson.edu", DNS.RRTYPE.A, DNS.RRCLASS.IN, 300, (short) 4, "130.127.204.30"))
-                .addAuthority(new DNS.Authority("clemson.edu", DNS.RRTYPE.NS, DNS.RRCLASS.IN, 3600, (short) 9, "extns1.clemson.edu"))
+                .addAnswer(new DNS.Answer("clemson.edu", DNS.RRTYPE.A, DNS.RRCLASS.IN, 105, (short) 4, "130.127.204.30"))
                 .serialize();
 
         Assert.assertTrue(Arrays.equals(dnsClemsonResponse, dnsResponse));
     }
 
     @Test
-    public void testDeserialize() {
+    public void testQueryDeserialization() throws PacketParsingException {
+        DNS queryExpected = new DNS()
+                .setTransactionId((short) 0x0001)
+                .setFlags((short) 0x0100)
+                .setQuestions(1)
+                .addQuery(new DNS.Query("clemson.edu"));
 
-        Map<String, Integer> pointer = ImmutableMap.of("clemson.edu", 12);
-        String ns = "extns1.clemson.edu";
-        
-        while (!ns.isEmpty()) {
-            if (pointer.containsKey(ns)) {
-                System.out.println("Writing: " + String.format("0x%04x", (0xc000 | pointer.get(ns))));
-                ns = "";
-            } else {
-                if (ns.contains(".")) {
-                    String[] labels = ns.split(Pattern.quote("."), 2);
-                    System.out.println("Writing: " + labels[0]);
-                    ns = labels[1];
-                } else {
-                    System.out.println("Writing: " + ns);
-                    ns = "";
-                }
-            }
-        }
+        DNS queryActual = (DNS) new DNS().deserialize(dnsClemsonQuery);
+
+        Assert.assertEquals(queryExpected, queryActual);
+    }
+
+    @Test
+    public void testResponseDeserialization() throws PacketParsingException {
+        DNS responseExpected = new DNS()
+                .setTransactionId((short) 0xa15a)
+                .setFlags((short) 0x8180)
+                .setQuestions(1)
+                .setAnswerRRs(1)
+                .setAuthorityRRs(0)
+                .setAdditionalRRs(0)
+                .addQuery(new DNS.Query("clemson.edu"))
+                .addAnswer(new DNS.Answer("clemson.edu", DNS.RRTYPE.A, DNS.RRCLASS.IN, 105, (short) 4, "130.127.204.30"));
+
+        DNS responseActual = (DNS) new DNS().deserialize(dnsClemsonResponse);
+
+        Assert.assertEquals(responseExpected, responseActual);
     }
 }

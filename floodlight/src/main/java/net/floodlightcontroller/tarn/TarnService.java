@@ -12,4 +12,6 @@ public interface TarnService extends IFloodlightService {
     Collection<PrefixMapping> getPrefixMappings();
     
     void addPrefixMapping(PrefixMapping mapping);
+
+    Collection<Session> getSessions();
 }

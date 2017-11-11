@@ -61,6 +61,11 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
     }
 
     @Override
+    public Collection<Session> getSessions() {
+        return sessions;
+    }
+
+    @Override
     public void init(FloodlightModuleContext context) throws FloodlightModuleException {
         restApiService = context.getServiceImpl(IRestApiService.class);
         switchService = context.getServiceImpl(IOFSwitchService.class);
@@ -75,6 +80,8 @@ public class RandomizerService implements IFloodlightModule, TarnService, IOFMes
         flowFactory = new FlowFactoryImpl();
 
         mappingHandler = new PrefixMappingHandler();
+
+        sessions = new ArrayList<>();
     }
 
     @Override

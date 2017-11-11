@@ -1,6 +1,8 @@
 package net.floodlightcontroller.tarn;
 
+import net.floodlightcontroller.core.FloodlightContext;
 import net.floodlightcontroller.core.IFloodlightProviderService;
+import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.test.MockThreadPoolService;
 import net.floodlightcontroller.debugcounter.IDebugCounterService;
@@ -10,12 +12,20 @@ import net.floodlightcontroller.devicemanager.IEntityClassifierService;
 import net.floodlightcontroller.devicemanager.SwitchPort;
 import net.floodlightcontroller.devicemanager.internal.DefaultEntityClassifier;
 import net.floodlightcontroller.devicemanager.test.MockDeviceManager;
+import net.floodlightcontroller.packet.Ethernet;
+import net.floodlightcontroller.packet.IPv4;
+import net.floodlightcontroller.packet.TCP;
+import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.test.FloodlightTestCase;
 import net.floodlightcontroller.threadpool.IThreadPoolService;
 import net.floodlightcontroller.topology.ITopologyService;
+import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.projectfloodlight.openflow.protocol.*;
+import org.projectfloodlight.openflow.protocol.match.Match;
+import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.types.*;
 
 import java.util.Optional;
@@ -30,8 +40,11 @@ public class RandomizerServiceTest extends FloodlightTestCase {
     private RandomizerService randomizer;
 
     private MockDeviceManager deviceManager;
-    protected MockThreadPoolService threadPool;
-    protected ITopologyService topology;
+    private MockThreadPoolService threadPool;
+    private ITopologyService topology;
+    private IRestApiService restApi;
+
+    private OFFactory factory = OFFactories.getFactory(OFVersion.OF_15);
 
     @Before
     public void setUp() throws Exception {
@@ -44,6 +57,7 @@ public class RandomizerServiceTest extends FloodlightTestCase {
         threadPool = new MockThreadPoolService();
         deviceManager = new MockDeviceManager();
         topology = createMock(ITopologyService.class);
+        restApi = createMock(IRestApiService.class);
         DefaultEntityClassifier entityClassifier = new DefaultEntityClassifier();
 
 
@@ -53,6 +67,7 @@ public class RandomizerServiceTest extends FloodlightTestCase {
         fmc.addService(IDeviceService.class, deviceManager);
         fmc.addService(IDebugCounterService.class, new MockDebugCounterService());
         fmc.addService(ITopologyService.class, topology);
+        fmc.addService(IRestApiService.class, restApi);
         fmc.addService(IEntityClassifierService.class, entityClassifier);
 
         threadPool.init(fmc);
@@ -87,9 +102,27 @@ public class RandomizerServiceTest extends FloodlightTestCase {
     }
 
     @Test
-    public void testBuildSession() {
+    public void testSessionAddedWhenPacketInHasMapping() {
+        randomizer.addPrefixMapping(new PrefixMapping("20.0.0.1", "50.0.0.0/24"));
 
+        IOFSwitch sw = createNiceMock(IOFSwitch.class);
+        EasyMock.expect(sw.getId()).andReturn(DatapathId.of(1)).anyTimes();
+        EasyMock.replay(sw);
 
-//        randomizer.buildSession()
+        Match match = factory.buildMatch().setExact(MatchField.IN_PORT, OFPort.of(1)).build();
+        OFPacketIn pi = factory.buildPacketIn().setMatch(match).setReason(OFPacketInReason.NO_MATCH).build();
+
+        Ethernet eth = new Ethernet().setSourceMACAddress(MacAddress.of(1)).setDestinationMACAddress(MacAddress.of(2));
+        IPv4 iPv4 = new IPv4().setSourceAddress("10.0.0.1").setDestinationAddress("20.0.0.1");
+        TCP tcp = new TCP().setSourcePort(40000).setDestinationPort(80);
+
+        iPv4.setProtocol(IpProtocol.TCP).setPayload(tcp);
+        eth.setEtherType(EthType.IPv4).setPayload(iPv4);
+
+        FloodlightContext cntx = new FloodlightContext();
+        IFloodlightProviderService.bcStore.put(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD, eth);
+
+        randomizer.receive(sw, pi, cntx);
+        Assert.assertTrue(!randomizer.getSessions().isEmpty());
     }
 }

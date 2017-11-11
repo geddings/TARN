@@ -46,47 +46,25 @@ def setUp():
     h1.setIP('10.0.0.1', prefixLen=24)
     h2.setIP('50.0.0.1', prefixLen=24)
 
-    # Wait for all commands to finish
-    results = {}
-    for h in net.hosts:
-        results[h.name] = h.waitOutput()
-    print "hosts finished"
-
-    time.sleep(30)
+    time.sleep(10)
 
     # REST API to configure AS1 controller
-    c1.configure(lan_port="1", wan_port="2")
-    c1.addAS("1", "10.0.0.0/24")
-    c1.addPrefixToAS("1", "20.0.0.0/24")
-    c1.addAS("2", "50.0.0.0/24")
-    c1.addPrefixToAS("2", "60.0.0.0/24")
-    print "C1 get AS information below"
-    print pp_json(c1.getInfo())
-    print pp_json(c1.getASes())
-
-    c1.addHost("10.0.0.1", "1")
+    c1.addMapping("50.0.0.1", "80.0.0.0/24")
+    print pp_json(c1.getMappings())
 
     # REST API to configure AS2 controller
-    c2.configure(lan_port="2", wan_port="1")
-    c2.addAS("2", "50.0.0.0/24")
-    c2.addPrefixToAS("2", "60.0.0.0/24")
-    c2.addAS("1", "10.0.0.0/24")
-    c2.addPrefixToAS("1", "20.0.0.0/24")
-    print "C2 get AS information below"
-    print pp_json(c2.getInfo())
-    print pp_json(c2.getASes())
-
-    c2.addHost("10.0.0.1", "1")
+    c2.addMapping("50.0.0.1", "80.0.0.0/24")
+    print pp_json(c2.getMappings())
 
     # End-to-end communication setup as below
     h1.cmd('route add -net 50.0.0.0 netmask 255.255.255.0 dev h1-eth0')
     h2.cmd('route add -net 10.0.0.0 netmask 255.255.255.0 dev h2-eth0')
 
     # Add static ARP entries
-    h1.setARP(h2.IP(), h2.MAC())
-    h2.setARP(h1.IP(), h1.MAC())
+    # h1.setARP(h2.IP(), h2.MAC())
+    # h2.setARP(h1.IP(), h1.MAC())
 
-    time.sleep(30)
+    time.sleep(3)
 
     # Query flow rules on each switch and write to log file
     s1.cmd('ovs-ofctl dump-flows s1 -O OpenFlow15 > ' + LOG_PATH + ' s1.log')
@@ -94,7 +72,7 @@ def setUp():
 
     info("** Testing network connectivity\n")
     # packet_loss = net.ping(net.hosts)
-    result = h1.cmd('ping -i 0.1 -c 1200 ' + str(h2.IP()))
+    result = h1.cmd('ping -i 0.1 -c 100 ' + str(h2.IP()))
     sent, received = net._parsePing( result )
     info('Sent:' + str(sent) + ' Received:' + str(received) + '\n')
 

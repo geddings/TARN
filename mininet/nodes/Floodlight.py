@@ -79,6 +79,18 @@ class Floodlight(Controller):
         subprocess.call('rm ' + self.properties_path + self.properties_file, shell=True)
         super(Floodlight, self).stop()
 
+    def addMapping(self, internal_ip, external_prefix):
+        data = {
+            "internal-ip": internal_ip,
+            "external-prefix": external_prefix
+        }
+        ret = self.rest_call('/wm/tarn/mapping/json', data, 'POST')
+        return ret[0] == 200
+    
+    def getMappings(self):
+        ret = self.rest_call('/wm/tarn/mapping/json', '', 'GET')
+        return ret[2]
+    
     def getInfo(self):
         """Returns general info about the TARN controller."""
         ret = self.rest_call('wm/tarn/info/json', '', 'GET')

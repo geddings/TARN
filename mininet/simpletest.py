@@ -113,7 +113,7 @@ if __name__ == '__main__':
     # force clean up on exit by registering a cleanup function
     # atexit.register(stopNetwork)
 
-    setLogLevel('info')
+    setLogLevel('debug')
 
     startNetwork()
 

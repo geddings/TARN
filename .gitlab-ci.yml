@@ -1,0 +1,5 @@
+tarn:
+  script:
+    - vagrant up
+    - vagrant ssh -c ls
+    - vagrant destroy -f

@@ -16,6 +16,7 @@ build_job:
 test_job:
   stage: test
   before_script:
+    - ls
     - ls ./floodlight
     - ls ./floodlight/target
   script:

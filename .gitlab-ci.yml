@@ -17,6 +17,8 @@ test_job:
     - vagrant up
     - vagrant ssh -c "sudo pip install -U pytest"
     - vagrant ssh -c "sudo pytest ./TARN/mininet/"
+  after_script:
+    - vagrant status
     
 review_job:
   stage: review

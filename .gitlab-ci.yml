@@ -1,46 +1,22 @@
 stages:
   - build
   - test
-  - review
-  - cleanup
 
 build_job:
   stage: build
   script:
     - cd floodlight
     - mvn package -Dmaven.test.skip=true
-    - ls target
   artifacts:
     paths:
       - ./floodlight/target/floodlight.jar
+      expire_in: 1 day
 
 test_job:
   stage: test
-  before_script:
-    - ls
-    - ls ./floodlight
-    - ls ./floodlight/target
   script:
-    - vagrant status
     - vagrant up
     - vagrant ssh -c "sudo pip install -U pytest"
     - vagrant ssh -c "sudo pytest ./TARN/mininet/"
   after_script:
-    - vagrant status
-    - vagrant ssh -c "cat ./TARN/logs/c1.log"
     - vagrant destroy -f
-    - vagrant status
-    
-review_job:
-  stage: review
-  script:
-    - vagrant status
-    - vagrant ssh -c "cat ./TARN/logs/c1.log"
-  when: on_failure
-    
-cleanup_job:
-  stage: cleanup
-  script:
-    - vagrant status
-    - vagrant destroy -f
-  when: always

@@ -1,5 +1,6 @@
 tarn:
   script:
     - vagrant up
-    - vagrant ssh -c ls
+    - vagrant ssh -c "pip install -U pytest"
+    - vagrant ssh -c "sudo pytest ./TARN/mininet/"
     - vagrant destroy -f

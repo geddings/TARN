@@ -9,9 +9,15 @@ build_job:
   script:
     - cd floodlight
     - mvn package -Dmaven.test.skip=true
+  artifacts:
+    paths:
+      - ./target/floodlight.jar
 
 test_job:
   stage: test
+  before_script:
+    - ls ./floodlight
+    - ls ./floodlight/target
   script:
     - vagrant status
     - vagrant up

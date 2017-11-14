@@ -1,3 +1,7 @@
+stages:
+  - build
+  - test
+
 maven-build:
   stage:
     - build

@@ -1,12 +1,12 @@
 package net.floodlightcontroller.tarn.web;
 
+import com.google.common.collect.ImmutableMap;
+import net.floodlightcontroller.tarn.Session;
+import net.floodlightcontroller.tarn.TarnService;
 import org.restlet.resource.Get;
+import org.restlet.resource.ServerResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.ImmutableMap;
-
-import net.floodlightcontroller.tarn.IRandomizerService;
 
 /**
  * Created by geddingsbarrineau on 10/29/16.
@@ -17,9 +17,13 @@ public class InfoResource extends ServerResource {
 
     @Get
     public ImmutableMap<String, Object> getTARNInfo() {
-        IRandomizerService tarn = (IRandomizerService) getContext().getAttributes().get(IRandomizerService.class.getCanonicalName());
+        TarnService tarnService = (TarnService) getContext().getAttributes().get(TarnService.class.getCanonicalName());
         ImmutableMap.Builder<String, Object> info = new ImmutableMap.Builder<>();
-        info.put("as-count", tarn.getAutonomousSystems().size());
+        int i = 0;
+        for (Session session : tarnService.getSessions()) {
+            info.put("session-" + i, session);
+            i++;
+        }
         return info.build();
     }
 }

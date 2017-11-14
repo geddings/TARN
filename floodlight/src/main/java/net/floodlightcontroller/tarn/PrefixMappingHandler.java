@@ -10,7 +10,7 @@ import java.util.Optional;
 
 /**
  * This class is responsible for maintaining all of the current prefix mappings needed for TARN.
- *
+ * <p>
  * Created by @geddings on 11/2/17.
  */
 class PrefixMappingHandler {
@@ -42,7 +42,7 @@ class PrefixMappingHandler {
     Collection<PrefixMapping> getMappings() {
         return prefixMappings.values();
     }
-    
+
     /**
      * Returns a mapping associated with the given IP address, if it exists. A mapping is associated if the IP address
      * corresponds to an internal IP or is a part of an external prefix range in any of the existing mappings.
@@ -65,6 +65,7 @@ class PrefixMappingHandler {
     /**
      * Returns true if the IPv4 packet contains an IP address that is associated with a TARN device, whether internal or
      * external.
+     *
      * @param iPv4 the packet in question
      * @return true if the packet is associated with at least one TARN device
      */

@@ -14,7 +14,7 @@ import java.io.IOException;
  * Created by @geddings on 11/8/17.
  */
 public class PrefixMappingResource extends ServerResource {
-    
+
     @Get
     public Object getPrefixMappings() {
         TarnService tarnService = (TarnService) getContext().getAttributes().get(TarnService.class.getCanonicalName());

@@ -1,33 +1,28 @@
 package net.floodlightcontroller.tarn;
 
 import com.google.common.collect.ImmutableList;
-import net.floodlightcontroller.core.IOFSwitch;
-import net.floodlightcontroller.core.internal.IOFSwitchService;
-import net.floodlightcontroller.tarn.flows.RewriteFlow;
 import org.projectfloodlight.openflow.protocol.OFFactories;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFVersion;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
-import org.projectfloodlight.openflow.protocol.instruction.OFInstruction;
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.protocol.oxm.OFOxms;
-import org.projectfloodlight.openflow.types.*;
+import org.projectfloodlight.openflow.types.EthType;
+import org.projectfloodlight.openflow.types.OFBufferId;
+import org.projectfloodlight.openflow.types.TransportPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * The Flow Factory is intended to take all responsibility for creating
  * the correct matches and actions for all the different types of flows
  * needed for the Randomizer.
- *
+ * <p>
  * With the new session-based approach, this class will no longer be responsible for writing the flows out to a switch.
  * It will be completely stateless, and will only generate flows for different object, like a Session.
  * <p>
@@ -35,14 +30,6 @@ import java.util.concurrent.Executors;
  */
 public class FlowFactoryImpl implements FlowFactory {
     private static final Logger log = LoggerFactory.getLogger(FlowFactoryImpl.class);
-
-    /* TODO: REMOVE THESE */
-    private static final ExecutorService executorService = Executors.newFixedThreadPool(1);
-    private static DatapathId sw = DatapathId.NONE;
-    private static IOFSwitchService switchService = null;
-    private static OFPort WAN_PORT = OFPort.of(2);
-    private static OFPort LAN_PORT = OFPort.of(1);
-    private static Boolean default_flows_set = false;
 
     /* We have to use OF15 in order to rewrite prefixes */
     private final OFFactory factory = OFFactories.getFactory(OFVersion.OF_15);
@@ -54,7 +41,7 @@ public class FlowFactoryImpl implements FlowFactory {
         OFMessage inboundFlow = factory.buildFlowAdd()
                 .setBufferId(OFBufferId.NO_BUFFER)
                 .setHardTimeout(0)
-                .setIdleTimeout(10)
+                .setIdleTimeout(5)
                 .setPriority(100)
                 .setMatch(buildMatch(session.getInbound()))
                 .setActions(buildActions(session.getInbound(), session.getOutbound()))
@@ -64,7 +51,7 @@ public class FlowFactoryImpl implements FlowFactory {
         OFMessage outboundFlow = factory.buildFlowAdd()
                 .setBufferId(OFBufferId.NO_BUFFER)
                 .setHardTimeout(0)
-                .setIdleTimeout(10)
+                .setIdleTimeout(5)
                 .setPriority(100)
                 .setMatch(buildMatch(session.getOutbound()))
                 .setActions(buildActions(session.getOutbound(), session.getInbound()))
@@ -74,14 +61,21 @@ public class FlowFactoryImpl implements FlowFactory {
     }
 
     private Match buildMatch(ConnectionAttributes connection) {
-        return factory.buildMatch()
+        Match.Builder builder = factory.buildMatch()
                 .setExact(MatchField.IN_PORT, connection.getInPort())
                 .setExact(MatchField.ETH_TYPE, EthType.IPv4)
                 .setExact(MatchField.IPV4_SRC, connection.getSrcIp())
-                .setExact(MatchField.IPV4_DST, connection.getDstIp())
-                .setExact(MatchField.TCP_SRC, connection.getSrcPort())
-                .setExact(MatchField.TCP_DST, connection.getDstPort())
-                .build();
+                .setExact(MatchField.IPV4_DST, connection.getDstIp());
+
+        if (!connection.getSrcPort().equals(TransportPort.NONE)) {
+            builder.setExact(MatchField.TCP_SRC, connection.getSrcPort());
+        }
+
+        if (!connection.getDstPort().equals(TransportPort.NONE)) {
+            builder.setExact(MatchField.TCP_DST, connection.getDstPort());
+        }
+
+        return builder.build();
     }
 
     private List<OFAction> buildActions(ConnectionAttributes connection, ConnectionAttributes oppositeConnection) {
@@ -112,162 +106,5 @@ public class FlowFactoryImpl implements FlowFactory {
                 .build());
 
         return actions;
-    }
-
-    @Deprecated
-    public static void setSwitch(DatapathId sw) {
-        FlowFactoryImpl.sw = sw;
-    }
-
-    @Deprecated
-    public static void setSwitchService(IOFSwitchService switchService) {
-        FlowFactoryImpl.switchService = switchService;
-    }
-
-    @Deprecated
-    static void setLanPort(int portNumber) {
-        try {
-            LAN_PORT = OFPort.of(portNumber);
-            default_flows_set = false;
-        } catch (IllegalArgumentException e) {
-            log.error("Illegal port number. Could not set LAN port.");
-        }
-    }
-
-    @Deprecated
-    static void setWanPort(int portNumber) {
-        try {
-            WAN_PORT = OFPort.of(portNumber);
-            default_flows_set = false;
-        } catch (IllegalArgumentException e) {
-            log.error("Illegal port number. Could not set WAN port.");
-        }
-    }
-
-    @Deprecated
-    static void insertDefaultFlows() {
-        if (sw.equals(DatapathId.NONE)) {
-            log.error("Unable to insert default flows. Switch DPID is not yet configured. Is it connected?");
-            return;
-        }
-        if (switchService == null) {
-            log.error("Unable to insert default flows. Switch service is not yet configured.");
-            return;
-        }
-
-        IOFSwitch iofSwitch = switchService.getActiveSwitch(sw);
-        if (iofSwitch != null) {
-            List<OFMessage> flows = new ArrayList<>();
-            flows.add(iofSwitch.getOFFactory().buildFlowAdd()
-                    .setTableId(TableId.of(0))
-                    .setPriority(0)
-                    .setInstructions(Collections.singletonList(iofSwitch.getOFFactory().instructions()
-                            .buildGotoTable().setTableId(TableId.of(1)).build()))
-                    .build());
-            flows.add(iofSwitch.getOFFactory().buildFlowAdd()
-                    .setTableId(TableId.of(1))
-                    .setPriority(1)
-                    .setMatch(iofSwitch.getOFFactory().buildMatch().setExact(MatchField.IN_PORT, LAN_PORT).build())
-                    .setOutPort(WAN_PORT)
-                    .build());
-            flows.add(iofSwitch.getOFFactory().buildFlowAdd()
-                    .setTableId(TableId.of(1))
-                    .setPriority(1)
-                    .setMatch(iofSwitch.getOFFactory().buildMatch().setExact(MatchField.IN_PORT, WAN_PORT).build())
-                    .setOutPort(LAN_PORT)
-                    .build());
-            iofSwitch.write(flows);
-        } else {
-            log.error("Switch object not found. Prefix flows will not be inserted");
-        }
-    }
-
-    @Deprecated
-    private static List<OFInstruction> getInstructions() {
-        List<OFInstruction> instructions = new ArrayList<>();
-        instructions.add(OFFactories.getFactory(OFVersion.OF_15).instructions().buildGotoTable().setTableId(TableId.of(1)).build());
-        return instructions;
-    }
-
-    @Deprecated
-    static void insertASRewriteFlows(AutonomousSystem as) {
-        Runnable task = () -> {
-            if (sw.equals(DatapathId.NONE)) {
-                log.error("Unable to insert rewrite flows. Switch DPID is not yet configured. Is it connected?");
-                return;
-            }
-            if (switchService == null) {
-                log.error("Unable to insert rewrite flows. Switch service is not yet configured.");
-                return;
-            }
-
-            if (!default_flows_set) insertDefaultFlows();
-
-            IOFSwitch iofSwitch = switchService.getActiveSwitch(sw);
-            if (iofSwitch != null) {
-                List<OFMessage> flows = getASFlows(as);
-                log.trace("{}", flows);
-                iofSwitch.write(flows);
-            } else {
-                log.error("Switch object not found. Prefix flows will not be inserted");
-            }
-        };
-
-        executorService.execute(task);
-    }
-
-    @Deprecated
-    private static List<OFMessage> getASFlows(AutonomousSystem as) {
-        List<OFMessage> flows = new ArrayList<>();
-        flows.add(RewriteFlow.builder().as(as).ethType(EthType.IPv4).source().encrypt().inPort(LAN_PORT).outPort(WAN_PORT).build().getFlow());
-        flows.add(RewriteFlow.builder().as(as).ethType(EthType.IPv4).destination().encrypt().inPort(LAN_PORT).outPort(WAN_PORT).build().getFlow());
-        flows.add(RewriteFlow.builder().as(as).ethType(EthType.IPv4).source().decrypt().inPort(WAN_PORT).outPort(LAN_PORT).build().getFlow());
-        flows.add(RewriteFlow.builder().as(as).ethType(EthType.IPv4).destination().decrypt().inPort(WAN_PORT).outPort(LAN_PORT).build().getFlow());
-//        flows.add(RewriteFlow.builder().as(as).ethType(EthType.ARP).source().encrypt().inPort(LAN_PORT).outPort(WAN_PORT).build().getFlow());
-//        flows.add(RewriteFlow.builder().as(as).ethType(EthType.ARP).destination().encrypt().inPort(LAN_PORT).outPort(WAN_PORT).build().getFlow());
-//        flows.add(RewriteFlow.builder().as(as).ethType(EthType.ARP).source().decrypt().inPort(WAN_PORT).outPort(LAN_PORT).build().getFlow());
-//        flows.add(RewriteFlow.builder().as(as).ethType(EthType.ARP).destination().decrypt().inPort(WAN_PORT).outPort(LAN_PORT).build().getFlow());
-        return flows;
-    }
-
-    @Deprecated
-    static void insertHostRewriteFlows(Host host, AutonomousSystem as) {
-        Runnable task = () -> {
-            if (sw.equals(DatapathId.NONE)) {
-                log.error("Unable to insert rewrite flows. Switch DPID is not yet configured. Is it connected?");
-                return;
-            }
-            if (switchService == null) {
-                log.error("Unable to insert rewrite flows. Switch service is not yet configured.");
-                return;
-            }
-
-            if (!default_flows_set) insertDefaultFlows();
-
-            IOFSwitch iofSwitch = switchService.getActiveSwitch(sw);
-            if (iofSwitch != null) {
-                List<OFMessage> flows = getHostFlows(host, as);
-                log.trace("{}", flows);
-                iofSwitch.write(flows);
-            } else {
-                log.error("Switch object not found. Host rewrite flows will not be inserted");
-            }
-        };
-
-        executorService.execute(task);
-    }
-
-    @Deprecated
-    private static List<OFMessage> getHostFlows(Host host, AutonomousSystem as) {
-        List<OFMessage> flows = new ArrayList<>();
-        flows.add(RewriteFlow.builder().host(host).as(as).ethType(EthType.IPv4).source().encrypt().inPort(LAN_PORT).outPort(WAN_PORT).build().getFlow());
-        flows.add(RewriteFlow.builder().host(host).as(as).ethType(EthType.IPv4).destination().encrypt().inPort(LAN_PORT).outPort(WAN_PORT).build().getFlow());
-        flows.add(RewriteFlow.builder().host(host).as(as).ethType(EthType.IPv4).source().decrypt().inPort(WAN_PORT).outPort(LAN_PORT).build().getFlow());
-        flows.add(RewriteFlow.builder().host(host).as(as).ethType(EthType.IPv4).destination().decrypt().inPort(WAN_PORT).outPort(LAN_PORT).build().getFlow());
-//        flows.add(RewriteFlow.builder().host(host).as(as).ethType(EthType.ARP).source().encrypt().inPort(LAN_PORT).outPort(WAN_PORT).build().getFlow());
-//        flows.add(RewriteFlow.builder().host(host).as(as).ethType(EthType.ARP).destination().encrypt().inPort(LAN_PORT).outPort(WAN_PORT).build().getFlow());
-//        flows.add(RewriteFlow.builder().host(host).as(as).ethType(EthType.ARP).source().decrypt().inPort(WAN_PORT).outPort(LAN_PORT).build().getFlow());
-//        flows.add(RewriteFlow.builder().host(host).as(as).ethType(EthType.ARP).destination().decrypt().inPort(WAN_PORT).outPort(LAN_PORT).build().getFlow());
-        return flows;
     }
 }

@@ -14,12 +14,8 @@ public class RandomizerWebRoutable implements RestletRoutable {
     @Override
     public Router getRestlet(Context context) {
         Router router = new Router(context);
-        router.attach("/config/json", ConfigResource.class);
         router.attach("/info/json", InfoResource.class);
         router.attach("/mapping/json", PrefixMappingResource.class);
-        router.attach("/as/json", AutonomousSystemsResource.class);
-        router.attach("/as/{as-number}/json", AutonomousSystemResource.class);
-        router.attach("/host/json", HostsResource.class);
         return router;
     }
 

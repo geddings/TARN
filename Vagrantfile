@@ -6,7 +6,7 @@ SCRIPT
 
 Vagrant.configure("2") do |config|
   config.vm.box = "geddings/mininext"
-  config.vm.box_version = "0.0.4"
+  config.vm.box_version = "1.0.0"
   
   config.vm.provider "virtualbox" do |v|
       # v.name = "tarn"

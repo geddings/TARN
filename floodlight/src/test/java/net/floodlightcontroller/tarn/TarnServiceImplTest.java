@@ -35,9 +35,9 @@ import static org.easymock.EasyMock.*;
 /**
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 10/3/17.
  */
-public class RandomizerServiceTest extends FloodlightTestCase {
+public class TarnServiceImplTest extends FloodlightTestCase {
 
-    private RandomizerService randomizer;
+    private TarnServiceImpl randomizer;
 
     private MockDeviceManager deviceManager;
     private MockThreadPoolService threadPool;
@@ -50,7 +50,7 @@ public class RandomizerServiceTest extends FloodlightTestCase {
     public void setUp() throws Exception {
         super.setUp();
 
-        randomizer = new RandomizerService();
+        randomizer = new TarnServiceImpl();
 
         /* Mock services */
         mockFloodlightProvider = getMockFloodlightProvider();

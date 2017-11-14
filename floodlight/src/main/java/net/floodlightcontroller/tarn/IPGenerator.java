@@ -20,6 +20,7 @@ class IPGenerator {
 
     /**
      * Given a prefix, generates and returns and returns a random IP address within the prefix.
+     *
      * @param prefix the prefix in which the generated address will be contained
      * @return a random IP address within the given prefix
      */

@@ -4,6 +4,7 @@ import sys
 import time
 from mininet.log import info, setLogLevel
 from mininet.net import Mininet
+from mininet.cli import CLI
 from os import makedirs
 from os import path
 
@@ -49,11 +50,13 @@ def setUp():
     time.sleep(10)
 
     # REST API to configure AS1 controller
-    c1.addMapping("50.0.0.1", "80.0.0.0/24")
+    c1.addMapping("10.0.0.1", "40.0.0.0/24")
+    c1.addMapping("50.0.0.1", "80.0.0.0/16")
     print pp_json(c1.getMappings())
 
     # REST API to configure AS2 controller
-    c2.addMapping("50.0.0.1", "80.0.0.0/24")
+    c2.addMapping("10.0.0.1", "40.0.0.0/24")
+    c2.addMapping("50.0.0.1", "80.0.0.0/16")
     print pp_json(c2.getMappings())
 
     # End-to-end communication setup as below
@@ -72,16 +75,28 @@ def setUp():
 
     info("** Testing network connectivity\n")
     # packet_loss = net.ping(net.hosts)
-    result = h1.cmd('ping -i 0.1 -c 100 ' + str(h2.IP()))
+    result = h1.cmd('ping -i 1 -c 10 ' + str(h2.IP()))
+    sent, received = net._parsePing( result )
+    info('Sent:' + str(sent) + ' Received:' + str(received) + '\n')
+    
+    time.sleep(7)
+
+    result = h1.cmd('ping -i 1 -c 10 ' + str(h2.IP()))
+    sent, received = net._parsePing( result )
+    info('Sent:' + str(sent) + ' Received:' + str(received) + '\n')
+    
+    time.sleep(7)
+
+    result = h1.cmd('ping -i 1 -c 10 ' + str(h2.IP()))
     sent, received = net._parsePing( result )
     info('Sent:' + str(sent) + ' Received:' + str(received) + '\n')
 
-    packet_loss = 100.0 * (sent - received) / sent
+    # packet_loss = 100.0 * (sent - received) / sent
 
-    if packet_loss > PACKET_LOSS_THRESHOLD:
-        sys.exit(-1)
-    else:
-        sys.exit(0)
+    # if packet_loss > PACKET_LOSS_THRESHOLD:
+    #     sys.exit(-1)
+    # else:
+    #     sys.exit(0)
 
 
 def startNetwork():
@@ -113,8 +128,10 @@ if __name__ == '__main__':
     # force clean up on exit by registering a cleanup function
     # atexit.register(stopNetwork)
 
-    setLogLevel('debug')
+    setLogLevel('info')
 
     startNetwork()
+
+    CLI(net)
 
     stopNetwork()

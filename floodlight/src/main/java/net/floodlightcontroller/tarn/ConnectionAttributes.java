@@ -1,5 +1,7 @@
 package net.floodlightcontroller.tarn;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import net.floodlightcontroller.tarn.web.ConnectionAttributesSerializer;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.projectfloodlight.openflow.types.TransportPort;
@@ -14,6 +16,7 @@ import org.projectfloodlight.openflow.types.TransportPort;
  *
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 11/2/17.
  */
+@JsonSerialize(using = ConnectionAttributesSerializer.class)
 public class ConnectionAttributes {
 
     private final IPv4Address srcIp;

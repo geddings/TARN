@@ -10,18 +10,19 @@ import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 /**
  * A mapping of an internal IP address with the current external prefix associated with it. These mappings will
  * be agreed upon out-of-band by anyone wanting to use a TARN service.
- *
+ * <p>
  * Created by @geddings on 11/2/17.
  */
 @JsonSerialize(using = PrefixMappingSerializer.class)
 public class PrefixMapping {
-    
+
     private final IPv4Address internalIp;
     private final IPv4AddressWithMask currentPrefix;
 
     /**
      * Creates a new TARN prefix mapping.
-     * @param internalIp the internal IP of the TARN device
+     *
+     * @param internalIp    the internal IP of the TARN device
      * @param currentPrefix the current external prefix being mapped to the TARN device
      */
     @JsonCreator

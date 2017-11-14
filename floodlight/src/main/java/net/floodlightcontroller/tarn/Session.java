@@ -1,5 +1,8 @@
 package net.floodlightcontroller.tarn;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import net.floodlightcontroller.tarn.web.SessionSerializer;
+
 /**
  * Represents a TARN session. A TARN session is defined as a complete two-way communication between two devices, with
  * at least one device being a TARN device (i.e. has a configured prefix mapping).
@@ -15,6 +18,7 @@ package net.floodlightcontroller.tarn;
  *
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 11/2/17.
  */
+@JsonSerialize(using = SessionSerializer.class)
 public class Session {
     private final ConnectionAttributes inbound;
     private final ConnectionAttributes outbound;
@@ -24,11 +28,11 @@ public class Session {
         this.outbound = outbound;
     }
 
-    ConnectionAttributes getInbound() {
+    public ConnectionAttributes getInbound() {
         return inbound;
     }
 
-    ConnectionAttributes getOutbound() {
+    public ConnectionAttributes getOutbound() {
         return outbound;
     }
 

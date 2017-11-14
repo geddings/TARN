@@ -3,14 +3,11 @@ stages:
   - test
 
 maven-build:
-  stage:
-    - build
-  script:
-    - mvn package -Dmaven.test.skip=true
+  stage: build
+  script: "mvn package -Dmaven.test.skip=true"
 
 tarn-test:
-  stage:
-    - test
+  stage: test
   script:
     - vagrant up
     - vagrant ssh -c "sudo pip install -U pytest"

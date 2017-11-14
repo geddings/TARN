@@ -19,6 +19,9 @@ test_job:
     - vagrant ssh -c "sudo pytest ./TARN/mininet/"
   after_script:
     - vagrant status
+    - vagrant ssh -c "cat ./TARN/logs/c1.log"
+    - vagrant destroy -f
+    - vagrant status
     
 review_job:
   stage: review

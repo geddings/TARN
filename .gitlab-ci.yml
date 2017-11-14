@@ -9,9 +9,10 @@ build_job:
   script:
     - cd floodlight
     - mvn package -Dmaven.test.skip=true
+    - ls target
   artifacts:
     paths:
-      - ./target/floodlight.jar
+      - ./floodlight/target/floodlight.jar
 
 test_job:
   stage: test

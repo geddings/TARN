@@ -10,7 +10,7 @@ build_job:
   artifacts:
     paths:
       - ./floodlight/target/floodlight.jar
-      expire_in: 1 day
+    expire_in: 1 day
 
 test_job:
   stage: test

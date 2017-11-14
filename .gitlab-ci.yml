@@ -4,7 +4,9 @@ stages:
 
 maven-build:
   stage: build
-  script: "mvn package -Dmaven.test.skip=true"
+  script:
+    - cd floodlight
+    - mvn package -Dmaven.test.skip=true
 
 tarn-test:
   stage: test

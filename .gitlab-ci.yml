@@ -13,7 +13,7 @@ build_job:
 test_job:
   stage: test
   script:
-    - pwd
+    - vagrant status
     - vagrant up
     - vagrant ssh -c "sudo pip install -U pytest"
     - vagrant ssh -c "sudo pytest ./TARN/mininet/"
@@ -21,12 +21,13 @@ test_job:
 review_job:
   stage: review
   script:
+    - vagrant status
     - vagrant ssh -c "cat ./TARN/logs/c1.log"
   when: on_failure
     
 cleanup_job:
   stage: cleanup
   script:
-    - pwd
+    - vagrant status
     - vagrant destroy -f
   when: always

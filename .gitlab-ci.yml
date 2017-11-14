@@ -1,18 +1,30 @@
 stages:
   - build
   - test
+  - review
+  - cleanup
 
-maven-build:
+build_job:
   stage: build
   script:
     - cd floodlight
     - mvn package -Dmaven.test.skip=true
 
-tarn-test:
+test_job:
   stage: test
   script:
     - vagrant up
     - vagrant ssh -c "sudo pip install -U pytest"
     - vagrant ssh -c "sudo pytest ./TARN/mininet/"
+    
+review_job:
+  stage: review
+  script:
     - vagrant ssh -c "cat ./TARN/logs/c1.log"
+  when: on_failure
+    
+cleanup_job:
+  stage: cleanup
+  script:
     - vagrant destroy -f
+  when: always

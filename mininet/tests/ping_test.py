@@ -67,7 +67,7 @@ def test_ping():
     h1.setIP('10.0.0.1', prefixLen=24)
     h2.setIP('50.0.0.1', prefixLen=24)
 
-    time.sleep(10)
+    time.sleep(20)
 
     # REST API to configure AS1 controller
     c1.addMapping("10.0.0.1", "40.0.0.0/24")

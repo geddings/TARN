@@ -17,6 +17,7 @@ import org.projectfloodlight.openflow.types.TransportPort;
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 11/2/17.
  */
 @JsonSerialize(using = ConnectionAttributesSerializer.class)
+@Deprecated
 public class ConnectionAttributes {
 
     private final IPv4Address srcIp;

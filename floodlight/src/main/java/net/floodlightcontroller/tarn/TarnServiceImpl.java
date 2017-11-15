@@ -117,55 +117,34 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
      */
     @Override
     public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
-        log.debug("OFMessage received.");
         if (msg.getType() == OFType.PACKET_IN) {
             OFPacketIn pi = (OFPacketIn) msg;
-            log.debug("Packet in received {}", pi);
             OFPort srcPort = OFMessageUtils.getInPort(pi);
             Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
 
             if (eth.getEtherType() == EthType.IPv4) {
-                log.debug("IPv4 message received.");
                 IPv4 ipv4 = (IPv4) eth.getPayload();
-                if (ipv4.getProtocol() == IpProtocol.TCP) {
-                    log.debug("TCP message received.");
-                    TCP tcp = (TCP) ipv4.getPayload();
-                    /* If source or destination IP addresses belong to a TARN device, then create a new session */
-                    if (mappingHandler.isTarnDevice(ipv4)) {
-                        log.info("New TARN TCP session identified.");
-                        TCPSession session = buildTCPSession(sw, srcPort, eth, ipv4, tcp);
-                        sessions.add(session);
-                        List<OFMessage> flows = flowFactory.buildFlows(session);
-                        sw.write(flows);
-                        sw.write(buildPacketOut(sw, pi));
-                        return Command.STOP;
+
+                if (mappingHandler.isTarnDevice(ipv4)) {
+                    Session session = null;
+
+                    if (ipv4.getProtocol() == IpProtocol.TCP) {
+                        TCP tcp = (TCP) ipv4.getPayload();
+                        session = buildTCPSession(sw, srcPort, eth, ipv4, tcp);
+                    } else if (ipv4.getProtocol() == IpProtocol.UDP) {
+                        UDP udp = (UDP) ipv4.getPayload();
+                        session = buildUDPSession(sw, srcPort, eth, ipv4, udp);
+                    } else if (ipv4.getProtocol() == IpProtocol.ICMP) {
+                        session = buildICMPSession(sw, srcPort, eth, ipv4);
                     }
-                } else if (ipv4.getProtocol() == IpProtocol.UDP) {
-                    log.debug("UDP message received.");
-                    UDP udp = (UDP) ipv4.getPayload();
-                    /* If source or destination IP addresses belong to a TARN device, then create a new session */
-                    if (mappingHandler.isTarnDevice(ipv4)) {
-                        log.info("New TARN TCP session identified.");
-                        UDPSession session = buildUDPSession(sw, srcPort, eth, ipv4, udp);
-                        sessions.add(session);
-                        List<OFMessage> flows = flowFactory.buildFlows(session);
-                        sw.write(flows);
-                        sw.write(buildPacketOut(sw, pi));
-                        return Command.STOP;
-                    }
-                } else if (ipv4.getProtocol() == IpProtocol.ICMP) {
-                    log.debug("ICMP message received.");
-                    /* If source or destination IP addresses belong to a TARN device, then create a new session */
-                    if (mappingHandler.isTarnDevice(ipv4)) {
-                        log.info("New TARN TCP session identified.");
-                        ICMPSession session = buildICMPSession(sw, srcPort, eth, ipv4);
-                        sessions.add(session);
-                        List<OFMessage> flows = flowFactory.buildFlows(session);
-                        sw.write(flows);
-                        sw.write(buildPacketOut(sw, pi));
-                        return Command.STOP;
-                    }
+
+                    List<OFMessage> flows = Collections.emptyList();
+                    if (session != null) flows = flowFactory.buildFlows(session);
+                    sw.write(flows);
+                    sw.write(buildPacketOut(sw, pi));
+                    return Command.STOP;
                 }
+
             }
 
         }
@@ -307,6 +286,7 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
             return new ICMPSession(connection1.build(), connection2.build());
         }
     }
+    
 
     private IPv4Address getReturnAddress(IPv4Address iPv4Address) {
         Optional<PrefixMapping> mapping = mappingHandler.getAssociatedMapping(iPv4Address);

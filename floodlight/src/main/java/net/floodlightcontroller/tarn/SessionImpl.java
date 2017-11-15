@@ -19,6 +19,7 @@ import net.floodlightcontroller.tarn.web.SessionSerializer;
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 11/2/17.
  */
 @JsonSerialize(using = SessionSerializer.class)
+@Deprecated
 public class SessionImpl {
     private final ConnectionAttributes inbound;
     private final ConnectionAttributes outbound;

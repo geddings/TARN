@@ -1,25 +1,19 @@
 package net.floodlightcontroller.tarn;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import net.floodlightcontroller.tarn.web.ConnectionAttributesSerializer;
+import net.floodlightcontroller.tarn.web.TransportPacketFlowSerializer;
 import org.projectfloodlight.openflow.types.IPv4Address;
+import org.projectfloodlight.openflow.types.IpProtocol;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.projectfloodlight.openflow.types.TransportPort;
 
 /**
- * Represents a TARN connection, which is one part of a TARN session. Because a TARN session will look different
- * depending on where the observer is located (i.e. before or after IP rewrites), connection objects are used to
- * differentiate.
- *
- * A connection is defined by an in port and out port, a source and destination IP address, and a source and destination
- * TCP port.
- *
- * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 11/2/17.
+ * Created by @geddings on 11/15/17.
  */
-@JsonSerialize(using = ConnectionAttributesSerializer.class)
-@Deprecated
-public class ConnectionAttributes {
+@JsonSerialize(using = TransportPacketFlowSerializer.class)
+public class TransportPacketFlow implements PacketFlow {
 
+    private final IpProtocol ipProtocol;
     private final IPv4Address srcIp;
     private final IPv4Address dstIp;
     private final TransportPort srcPort;
@@ -27,13 +21,18 @@ public class ConnectionAttributes {
     private final OFPort inPort;
     private final OFPort outPort;
 
-    private ConnectionAttributes(IPv4Address srcIp, IPv4Address dstIp, TransportPort srcPort, TransportPort dstPort, OFPort inPort, OFPort outPort) {
+    private TransportPacketFlow(IpProtocol ipProtocol, IPv4Address srcIp, IPv4Address dstIp, TransportPort srcPort, TransportPort dstPort, OFPort inPort, OFPort outPort) {
+        this.ipProtocol = ipProtocol;
         this.srcIp = srcIp;
         this.dstIp = dstIp;
         this.srcPort = srcPort;
         this.dstPort = dstPort;
         this.inPort = inPort;
         this.outPort = outPort;
+    }
+
+    public IpProtocol getIpProtocol() {
+        return ipProtocol;
     }
 
     public IPv4Address getSrcIp() {
@@ -65,6 +64,7 @@ public class ConnectionAttributes {
     }
 
     public static class Builder {
+        private IpProtocol ipProtocol = IpProtocol.NONE;
         private IPv4Address srcIp = IPv4Address.NONE;
         private IPv4Address dstIp = IPv4Address.NONE;
         private TransportPort srcPort = TransportPort.NONE;
@@ -72,6 +72,11 @@ public class ConnectionAttributes {
         private OFPort inPort = OFPort.ANY;
         private OFPort outPort = OFPort.ANY;
 
+        public Builder ipProtocol(IpProtocol ipProtocol) {
+            this.ipProtocol = ipProtocol;
+            return this;
+        }
+        
         public Builder srcIp(IPv4Address srcIp) {
             this.srcIp = srcIp;
             return this;
@@ -102,8 +107,8 @@ public class ConnectionAttributes {
             return this;
         }
 
-        public ConnectionAttributes build() {
-            return new ConnectionAttributes(srcIp, dstIp, srcPort, dstPort, inPort, outPort);
+        public TransportPacketFlow build() {
+            return new TransportPacketFlow(ipProtocol, srcIp, dstIp, srcPort, dstPort, inPort, outPort);
         }
     }
 }

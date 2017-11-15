@@ -12,9 +12,7 @@ import net.floodlightcontroller.core.module.IFloodlightService;
 import net.floodlightcontroller.devicemanager.IDevice;
 import net.floodlightcontroller.devicemanager.IDeviceService;
 import net.floodlightcontroller.devicemanager.SwitchPort;
-import net.floodlightcontroller.packet.Ethernet;
-import net.floodlightcontroller.packet.IPv4;
-import net.floodlightcontroller.packet.TCP;
+import net.floodlightcontroller.packet.*;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.tarn.web.RandomizerWebRoutable;
 import net.floodlightcontroller.util.OFMessageUtils;
@@ -34,7 +32,7 @@ import java.util.*;
  */
 public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessageListener {
     private static final Logger log = LoggerFactory.getLogger(TarnServiceImpl.class);
-    
+
     private IFloodlightProviderService floodlightProvider;
     private IRestApiService restApiService;
     private IDeviceService deviceService;
@@ -135,7 +133,20 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
                     /* If source or destination IP addresses belong to a TARN device, then create a new session */
                     if (mappingHandler.isTarnDevice(ipv4)) {
                         log.info("New TARN TCP session identified.");
-                        Session session = buildTCPSession(sw, srcPort, eth, ipv4, tcp);
+                        TCPSession session = buildTCPSession(sw, srcPort, eth, ipv4, tcp);
+                        sessions.add(session);
+                        List<OFMessage> flows = flowFactory.buildFlows(session);
+                        sw.write(flows);
+                        sw.write(buildPacketOut(sw, pi));
+                        return Command.STOP;
+                    }
+                } else if (ipv4.getProtocol() == IpProtocol.UDP) {
+                    log.debug("UDP message received.");
+                    UDP udp = (UDP) ipv4.getPayload();
+                    /* If source or destination IP addresses belong to a TARN device, then create a new session */
+                    if (mappingHandler.isTarnDevice(ipv4)) {
+                        log.info("New TARN TCP session identified.");
+                        UDPSession session = buildUDPSession(sw, srcPort, eth, ipv4, udp);
                         sessions.add(session);
                         List<OFMessage> flows = flowFactory.buildFlows(session);
                         sw.write(flows);
@@ -146,8 +157,8 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
                     log.debug("ICMP message received.");
                     /* If source or destination IP addresses belong to a TARN device, then create a new session */
                     if (mappingHandler.isTarnDevice(ipv4)) {
-                        log.info("New TARN ICMP session identified.");
-                        Session session = buildSession(sw, srcPort, eth, ipv4);
+                        log.info("New TARN TCP session identified.");
+                        ICMPSession session = buildICMPSession(sw, srcPort, eth, ipv4);
                         sessions.add(session);
                         List<OFMessage> flows = flowFactory.buildFlows(session);
                         sw.write(flows);
@@ -172,10 +183,12 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
      * @param tcp    the tcp payload of the packet in message
      * @return a new session object
      */
-    private Session buildTCPSession(IOFSwitch sw, OFPort inPort, Ethernet eth, IPv4 ipv4, TCP tcp) {
-        Session.Builder session = Session.builder();
-        ConnectionAttributes.Builder connection1 = ConnectionAttributes.builder();
-        ConnectionAttributes.Builder connection2 = ConnectionAttributes.builder();
+    private TCPSession buildTCPSession(IOFSwitch sw, OFPort inPort, Ethernet eth, IPv4 ipv4, TCP tcp) {
+        TransportPacketFlow.Builder connection1 = TransportPacketFlow.builder();
+        TransportPacketFlow.Builder connection2 = TransportPacketFlow.builder();
+
+        connection1.ipProtocol(IpProtocol.TCP);
+        connection2.ipProtocol(IpProtocol.TCP);
 
         /* Start filling in information about the two connections from the packet in message.
         *  Connection1 will always be the connection that the packet in message belongs to and
@@ -199,47 +212,69 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
         }
 
         /* Using the source address of Connection1, determine the destination address of Connection2. */
-        Optional<PrefixMapping> sourceMapping = mappingHandler.getAssociatedMapping(ipv4.getSourceAddress());
-        if (sourceMapping.isPresent()) {
-            if (sourceMapping.get().getInternalIp().equals(ipv4.getSourceAddress())) {
-                connection2.dstIp(IPGenerator.getRandomAddressFrom(sourceMapping.get().getCurrentPrefix()));
-            } else if (sourceMapping.get().getCurrentPrefix().contains(ipv4.getSourceAddress())) {
-                connection2.dstIp(sourceMapping.get().getInternalIp());
-            }
-        } else {
-            connection2.dstIp(ipv4.getSourceAddress());
-        }
+        connection2.dstIp(getReturnAddress(ipv4.getSourceAddress()));
 
         /* Using the destination address of Connection1, determine the source address of Connection2. */
-        Optional<PrefixMapping> destinationMapping = mappingHandler.getAssociatedMapping(ipv4.getDestinationAddress());
-        if (destinationMapping.isPresent()) {
-            if (destinationMapping.get().getInternalIp().equals(ipv4.getDestinationAddress())) {
-                connection2.srcIp(IPGenerator.getRandomAddressFrom(destinationMapping.get().getCurrentPrefix()));
-            } else if (destinationMapping.get().getCurrentPrefix().contains(ipv4.getDestinationAddress())) {
-                connection2.srcIp(destinationMapping.get().getInternalIp());
-            }
-        } else {
-            connection2.srcIp(ipv4.getDestinationAddress());
-        }
+        connection2.srcIp(getReturnAddress(ipv4.getDestinationAddress()));
 
         /* Determine which connection is inbound and which is outbound.
          * An outbound connection is one that will match on INTERNAL IP addresses.
          * An inbound connection is one that will match on EXTERNAL IP addresses. */
         if (mappingHandler.containsInternalIp(ipv4)) {
-            session.outbound(connection1.build())
-                    .inbound(connection2.build());
+            return new TCPSession(connection2.build(), connection1.build());
         } else {
-            session.inbound(connection1.build())
-                    .outbound(connection2.build());
+            return new TCPSession(connection1.build(), connection2.build());
         }
-        return session.build();
     }
 
-    private Session buildSession(IOFSwitch sw, OFPort inPort, Ethernet eth, IPv4 ipv4) {
-        Session.Builder session = Session.builder();
-        ConnectionAttributes.Builder connection1 = ConnectionAttributes.builder();
-        ConnectionAttributes.Builder connection2 = ConnectionAttributes.builder();
+    private UDPSession buildUDPSession(IOFSwitch sw, OFPort inPort, Ethernet eth, IPv4 ipv4, UDP udp) {
+        TransportPacketFlow.Builder connection1 = TransportPacketFlow.builder();
+        TransportPacketFlow.Builder connection2 = TransportPacketFlow.builder();
 
+        connection1.ipProtocol(IpProtocol.UDP);
+        connection2.ipProtocol(IpProtocol.UDP);        
+        
+        /* Start filling in information about the two connections from the packet in message.
+        *  Connection1 will always be the connection that the packet in message belongs to and
+        *  Connection2 will always be the opposite connection. It can't yet be known which connection
+        *  is inbound and which is outbound. */
+        connection1.inPort(inPort)
+                .srcIp(ipv4.getSourceAddress())
+                .dstIp(ipv4.getDestinationAddress())
+                .srcPort(udp.getSourcePort())
+                .dstPort(udp.getDestinationPort());
+
+        connection2.outPort(inPort)
+                .srcPort(udp.getDestinationPort())
+                .dstPort(udp.getSourcePort());
+
+        /* Get the output port and add it to the connections */
+        Optional<SwitchPort> switchPort = getAttachmentPoint(eth.getDestinationMACAddress(), sw.getId());
+        if (switchPort.isPresent()) {
+            connection1.outPort(switchPort.get().getPortId());
+            connection2.inPort(switchPort.get().getPortId());
+        }
+
+        /* Using the source address of Connection1, determine the destination address of Connection2. */
+        connection2.dstIp(getReturnAddress(ipv4.getSourceAddress()));
+
+        /* Using the destination address of Connection1, determine the source address of Connection2. */
+        connection2.srcIp(getReturnAddress(ipv4.getDestinationAddress()));
+
+        /* Determine which connection is inbound and which is outbound.
+         * An outbound connection is one that will match on INTERNAL IP addresses.
+         * An inbound connection is one that will match on EXTERNAL IP addresses. */
+        if (mappingHandler.containsInternalIp(ipv4)) {
+            return new UDPSession(connection2.build(), connection1.build());
+        } else {
+            return new UDPSession(connection1.build(), connection2.build());
+        }
+    }
+
+    private ICMPSession buildICMPSession(IOFSwitch sw, OFPort inPort, Ethernet eth, IPv4 ipv4) {
+        ControlPacketFlow.Builder connection1 = ControlPacketFlow.builder();
+        ControlPacketFlow.Builder connection2 = ControlPacketFlow.builder();
+        
         /* Start filling in information about the two connections from the packet in message.
         *  Connection1 will always be the connection that the packet in message belongs to and
         *  Connection2 will always be the opposite connection. It can't yet be known which connection
@@ -258,40 +293,32 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
         }
 
         /* Using the source address of Connection1, determine the destination address of Connection2. */
-        Optional<PrefixMapping> sourceMapping = mappingHandler.getAssociatedMapping(ipv4.getSourceAddress());
-        if (sourceMapping.isPresent()) {
-            if (sourceMapping.get().getInternalIp().equals(ipv4.getSourceAddress())) {
-                connection2.dstIp(IPGenerator.getRandomAddressFrom(sourceMapping.get().getCurrentPrefix()));
-            } else if (sourceMapping.get().getCurrentPrefix().contains(ipv4.getSourceAddress())) {
-                connection2.dstIp(sourceMapping.get().getInternalIp());
-            }
-        } else {
-            connection2.dstIp(ipv4.getSourceAddress());
-        }
+        connection2.dstIp(getReturnAddress(ipv4.getSourceAddress()));
 
         /* Using the destination address of Connection1, determine the source address of Connection2. */
-        Optional<PrefixMapping> destinationMapping = mappingHandler.getAssociatedMapping(ipv4.getDestinationAddress());
-        if (destinationMapping.isPresent()) {
-            if (destinationMapping.get().getInternalIp().equals(ipv4.getDestinationAddress())) {
-                connection2.srcIp(IPGenerator.getRandomAddressFrom(destinationMapping.get().getCurrentPrefix()));
-            } else if (destinationMapping.get().getCurrentPrefix().contains(ipv4.getDestinationAddress())) {
-                connection2.srcIp(destinationMapping.get().getInternalIp());
-            }
-        } else {
-            connection2.srcIp(ipv4.getDestinationAddress());
-        }
+        connection2.srcIp(getReturnAddress(ipv4.getDestinationAddress()));
 
         /* Determine which connection is inbound and which is outbound.
          * An outbound connection is one that will match on INTERNAL IP addresses.
          * An inbound connection is one that will match on EXTERNAL IP addresses. */
         if (mappingHandler.containsInternalIp(ipv4)) {
-            session.outbound(connection1.build())
-                    .inbound(connection2.build());
+            return new ICMPSession(connection2.build(), connection1.build());
         } else {
-            session.inbound(connection1.build())
-                    .outbound(connection2.build());
+            return new ICMPSession(connection1.build(), connection2.build());
         }
-        return session.build();
+    }
+
+    private IPv4Address getReturnAddress(IPv4Address iPv4Address) {
+        Optional<PrefixMapping> mapping = mappingHandler.getAssociatedMapping(iPv4Address);
+        if (mapping.isPresent()) {
+            if (mapping.get().getInternalIp().equals(iPv4Address)) {
+                return IPGenerator.getRandomAddressFrom(mapping.get().getCurrentPrefix());
+            } else if (mapping.get().getCurrentPrefix().contains(iPv4Address)) {
+                return mapping.get().getInternalIp();
+            }
+        }
+
+        return iPv4Address;
     }
 
     private OFPacketOut buildPacketOut(IOFSwitch sw, OFPacketIn pi) {

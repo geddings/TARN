@@ -13,11 +13,11 @@ import java.util.Optional;
  * <p>
  * Created by @geddings on 11/2/17.
  */
-class PrefixMappingHandler {
+public class PrefixMappingHandler {
 
     private Map<IPv4Address, PrefixMapping> prefixMappings;
 
-    PrefixMappingHandler() {
+    public PrefixMappingHandler() {
         prefixMappings = new HashMap<>();
     }
 
@@ -27,7 +27,7 @@ class PrefixMappingHandler {
      *
      * @param mapping the prefix mapping to add
      */
-    void addMapping(PrefixMapping mapping) {
+    public void addMapping(PrefixMapping mapping) {
         prefixMappings.put(mapping.getInternalIp(), mapping);
     }
 
@@ -39,7 +39,7 @@ class PrefixMappingHandler {
         return Optional.ofNullable(prefixMappings.get(internalIp));
     }
 
-    Collection<PrefixMapping> getMappings() {
+    public Collection<PrefixMapping> getMappings() {
         return prefixMappings.values();
     }
 
@@ -50,7 +50,7 @@ class PrefixMappingHandler {
      * @param iPv4Address the IP address associated with a prefix mapping
      * @return an optional prefix mapping
      */
-    Optional<PrefixMapping> getAssociatedMapping(IPv4Address iPv4Address) {
+    public Optional<PrefixMapping> getAssociatedMapping(IPv4Address iPv4Address) {
         if (isInternalIp(iPv4Address)) {
             return Optional.of(prefixMappings.get(iPv4Address));
         } else if (isExternalIp(iPv4Address)) {
@@ -69,7 +69,7 @@ class PrefixMappingHandler {
      * @param iPv4 the packet in question
      * @return true if the packet is associated with at least one TARN device
      */
-    Boolean isTarnDevice(IPv4 iPv4) {
+    public Boolean isTarnDevice(IPv4 iPv4) {
         return containsInternalIp(iPv4) || containsExternalIp(iPv4);
     }
 
@@ -83,7 +83,7 @@ class PrefixMappingHandler {
                 .anyMatch(prefix -> prefix.contains(iPv4Address));
     }
 
-    Boolean containsInternalIp(IPv4 iPv4) {
+    public Boolean containsInternalIp(IPv4 iPv4) {
         return isInternalIp(iPv4.getSourceAddress()) || isInternalIp(iPv4.getDestinationAddress());
     }
 

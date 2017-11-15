@@ -1,6 +1,10 @@
-package net.floodlightcontroller.tarn;
+package net.floodlightcontroller.tarn.internal;
 
 import com.google.common.collect.ImmutableList;
+import net.floodlightcontroller.tarn.FlowFactory;
+import net.floodlightcontroller.tarn.PacketFlow;
+import net.floodlightcontroller.tarn.Session;
+import net.floodlightcontroller.tarn.types.TransportPacketFlow;
 import org.projectfloodlight.openflow.protocol.OFFactories;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFMessage;
@@ -12,7 +16,6 @@ import org.projectfloodlight.openflow.protocol.oxm.OFOxms;
 import org.projectfloodlight.openflow.types.EthType;
 import org.projectfloodlight.openflow.types.IpProtocol;
 import org.projectfloodlight.openflow.types.OFBufferId;
-import org.projectfloodlight.openflow.types.TransportPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,18 +39,6 @@ public class FlowFactoryImpl implements FlowFactory {
     private final OFFactory factory = OFFactories.getFactory(OFVersion.OF_15);
 
     @Override
-    @Deprecated
-    public List<OFMessage> buildFlows(SessionImpl session) {
-        /* Build inbound flow */
-        OFMessage inboundFlow = buildFlow(buildMatch(session.getInbound()), buildActions(session.getInbound(), session.getOutbound()));
-
-        /* Build outbound flow */
-        OFMessage outboundFlow = buildFlow(buildMatch(session.getOutbound()), buildActions(session.getOutbound(), session.getInbound()));
-
-        return ImmutableList.of(inboundFlow, outboundFlow);
-    }
-
-    @Override
     public List<OFMessage> buildFlows(Session session) {
         /* Build inbound flow */
         OFMessage inboundFlow = buildFlow(buildMatch(session.getInbound()), buildActions(session.getInbound(), session.getOutbound()));
@@ -69,27 +60,6 @@ public class FlowFactoryImpl implements FlowFactory {
                 .build();
     }
 
-    @Deprecated
-    private Match buildMatch(ConnectionAttributes connection) {
-        Match.Builder builder = factory.buildMatch()
-                .setExact(MatchField.IN_PORT, connection.getInPort())
-                .setExact(MatchField.ETH_TYPE, EthType.IPv4)
-                .setExact(MatchField.IPV4_SRC, connection.getSrcIp())
-                .setExact(MatchField.IPV4_DST, connection.getDstIp());
-
-        if (!connection.getSrcPort().equals(TransportPort.NONE)) {
-            builder.setExact(MatchField.IP_PROTO, IpProtocol.TCP);
-            builder.setExact(MatchField.TCP_SRC, connection.getSrcPort());
-        }
-
-        if (!connection.getDstPort().equals(TransportPort.NONE)) {
-            builder.setExact(MatchField.IP_PROTO, IpProtocol.TCP);
-            builder.setExact(MatchField.TCP_DST, connection.getDstPort());
-        }
-
-        return builder.build();
-    }
-    
     private Match buildMatch(PacketFlow packetFlow) {
         Match.Builder builder = factory.buildMatch()
                 .setExact(MatchField.IN_PORT, packetFlow.getInPort())
@@ -111,37 +81,6 @@ public class FlowFactoryImpl implements FlowFactory {
         }
 
         return builder.build();
-    }
-
-    @Deprecated
-    private List<OFAction> buildActions(ConnectionAttributes connection, ConnectionAttributes oppositeConnection) {
-        List<OFAction> actions = new ArrayList<>();
-        OFOxms oxms = factory.oxms();
-
-        /* Check if source needs to be rewritten */
-        if (!connection.getSrcIp().equals(oppositeConnection.getDstIp())) {
-            actions.add(factory.actions()
-                    .buildSetField()
-                    .setField(oxms.ipv4Src(oppositeConnection.getDstIp()))
-                    .build());
-        }
-
-        /* Check if destination needs to be rewritten */
-        if (!connection.getDstIp().equals(oppositeConnection.getSrcIp())) {
-            actions.add(factory.actions()
-                    .buildSetField()
-                    .setField(oxms.ipv4Dst(oppositeConnection.getSrcIp()))
-                    .build());
-        }
-
-        /* Set output port */
-        actions.add(factory.actions()
-                .buildOutput()
-                .setMaxLen(0xFFffFFff)
-                .setPort(connection.getOutPort())
-                .build());
-
-        return actions;
     }
 
     private List<OFAction> buildActions(PacketFlow packetFlow, PacketFlow oppositePacketFlow) {

@@ -16,7 +16,7 @@ public class EventListener {
     private int eventsHandled;
     private int sessions;
 
-    EventListener(TarnService randomizer) {
+    public EventListener(TarnService randomizer) {
         this.randomizer = randomizer;
     }
 

@@ -1,4 +1,6 @@
-package net.floodlightcontroller.tarn;
+package net.floodlightcontroller.tarn.types;
+
+import net.floodlightcontroller.tarn.Session;
 
 /**
  * Created by @geddings on 11/15/17.

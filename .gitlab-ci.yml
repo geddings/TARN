@@ -17,6 +17,6 @@ test_job:
   script:
     - vagrant up
     - vagrant ssh -c "sudo pip install -U pytest"
-    - vagrant ssh -c "sudo pytest ./TARN/mininet/"
+    - vagrant ssh -c "sudo pytest ./TARN/examples/tests/"
   after_script:
     - vagrant destroy -f

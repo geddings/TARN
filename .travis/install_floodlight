@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# Install Floodlight
-git clone https://www.github.com/cbarrin/EAGERFloodlight -b develop
-pushd EAGERFloodlight
-sudo ant
-popd

@@ -3,7 +3,7 @@ package net.floodlightcontroller.tarn.web;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import net.floodlightcontroller.tarn.ControlPacketFlow;
+import net.floodlightcontroller.tarn.types.ControlPacketFlow;
 
 import java.io.IOException;
 

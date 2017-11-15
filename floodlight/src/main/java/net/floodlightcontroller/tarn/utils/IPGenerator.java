@@ -1,4 +1,4 @@
-package net.floodlightcontroller.tarn;
+package net.floodlightcontroller.tarn.utils;
 
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
@@ -10,7 +10,7 @@ import java.util.Random;
  *
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 8/18/17.
  */
-class IPGenerator {
+public class IPGenerator {
 
     private static Random rng = new Random();
 
@@ -24,7 +24,7 @@ class IPGenerator {
      * @param prefix the prefix in which the generated address will be contained
      * @return a random IP address within the given prefix
      */
-    static IPv4Address getRandomAddressFrom(IPv4AddressWithMask prefix) {
+    public static IPv4Address getRandomAddressFrom(IPv4AddressWithMask prefix) {
         return IPv4Address.of(rng.nextInt())
                 .and(prefix.getMask().not())
                 .or(prefix.getValue());

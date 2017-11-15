@@ -1,6 +1,7 @@
-package net.floodlightcontroller.tarn;
+package net.floodlightcontroller.tarn.types;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import net.floodlightcontroller.tarn.PacketFlow;
 import net.floodlightcontroller.tarn.web.ControlPacketFlowSerializer;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.OFPort;

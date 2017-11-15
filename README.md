@@ -11,7 +11,7 @@ Master | Develop
 - [Download and install Vagrant, a virtual machine environment manager.](https://www.vagrantup.com)
 
 ### Building the environment
-- Clone the TARN project: `git clone http://github.com/geddings/TARN`
+- Clone the TARN project: `git clone http://130.127.88.99/tarn/tarn`
 - Change directories: `cd TARN/`
 - Start the Vagrant build process: `vagrant up`
   - _Vagrant commands must be run in the directory that contains the **Vagrantfile**_
@@ -23,12 +23,12 @@ Master | Develop
 ### Running TARN
 There are multiple topologies in which TARN can be run with. The following commands assume that you are in the home directory.
 
-- To run a two host, no bgp topology: `sudo python TARN/mininet/topologies/simplenobgptopo.py`
-- To run a two AS, bgp topology: `sudo python TARN/mininet/topologies/2-AS-ebgp/start.py`
+- To run a simple, one-way randomization example: `sudo python ./examples/oneway.py`
+- To run a simple, two-way randomization example: `sudo python ./examples/twoway.py`
 
 # Links
-**[TARN Wiki - Contains info on REST API](https://github.com/geddings/TARN/wiki)**
+**[TARN Wiki - Contains info on REST API](http://130.127.88.99/tarn/TARN/wikis/home)**
 
-**[TARN Floodlight module](https://github.com/geddings/TARN/tree/develop/floodlight/src/main/java/net/floodlightcontroller/tarn)**
+**[TARN Floodlight module](http://130.127.88.99/tarn/TARN/tree/master/floodlight/src/main/java/net/floodlightcontroller/tarn)**
 
 **[PEERING BGP testbed](https://peering.usc.edu)**

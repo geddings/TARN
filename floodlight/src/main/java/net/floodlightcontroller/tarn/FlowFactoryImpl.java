@@ -10,6 +10,7 @@ import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.protocol.oxm.OFOxms;
 import org.projectfloodlight.openflow.types.EthType;
+import org.projectfloodlight.openflow.types.IpProtocol;
 import org.projectfloodlight.openflow.types.OFBufferId;
 import org.projectfloodlight.openflow.types.TransportPort;
 import org.slf4j.Logger;
@@ -68,10 +69,12 @@ public class FlowFactoryImpl implements FlowFactory {
                 .setExact(MatchField.IPV4_DST, connection.getDstIp());
 
         if (!connection.getSrcPort().equals(TransportPort.NONE)) {
+            builder.setExact(MatchField.IP_PROTO, IpProtocol.TCP);
             builder.setExact(MatchField.TCP_SRC, connection.getSrcPort());
         }
 
         if (!connection.getDstPort().equals(TransportPort.NONE)) {
+            builder.setExact(MatchField.IP_PROTO, IpProtocol.TCP);
             builder.setExact(MatchField.TCP_DST, connection.getDstPort());
         }
 

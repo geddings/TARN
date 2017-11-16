@@ -26,6 +26,14 @@ There are multiple topologies in which TARN can be run with. The following comma
 - To run a simple, one-way randomization example: `sudo python ./examples/oneway.py`
 - To run a simple, two-way randomization example: `sudo python ./examples/twoway.py`
 
+# TLDR;
+```
+git clone http://130.127.88.99/tarn/tarn
+cd tarn
+vagrant up
+vagrant ssh -c "sudo python ./TARN/examples/oneway.py"
+```
+
 # Links
 **[TARN Wiki - Contains info on REST API](http://130.127.88.99/tarn/TARN/wikis/home)**
 

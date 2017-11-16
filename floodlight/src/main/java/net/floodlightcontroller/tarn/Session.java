@@ -16,50 +16,11 @@ import net.floodlightcontroller.tarn.web.SessionSerializer;
  * 'out' of the the local network, the connection attributes will always contain a TARN device's internal address. Each
  * perspective is from the vantage point of Floodlight, before any rewrites occur, in each direction.
  *
- * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 11/2/17.
+ * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 11/15/17.
  */
 @JsonSerialize(using = SessionSerializer.class)
-public class Session {
-    private final ConnectionAttributes inbound;
-    private final ConnectionAttributes outbound;
+public interface Session {
+    PacketFlow getInbound();
 
-    private Session(ConnectionAttributes inbound, ConnectionAttributes outbound) {
-        this.inbound = inbound;
-        this.outbound = outbound;
-    }
-
-    public ConnectionAttributes getInbound() {
-        return inbound;
-    }
-
-    public ConnectionAttributes getOutbound() {
-        return outbound;
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static class Builder {
-        private ConnectionAttributes inbound = null;
-        private ConnectionAttributes outbound = null;
-
-        Builder inbound(ConnectionAttributes inbound) {
-            this.inbound = inbound;
-            return this;
-        }
-
-        Builder outbound(ConnectionAttributes outbound) {
-            this.outbound = outbound;
-            return this;
-        }
-
-        Session build() {
-            if (inbound != null && outbound != null) {
-                return new Session(inbound, outbound);
-            } else {
-                throw new IllegalArgumentException("Session inbound and outbound attributes must be defined.");
-            }
-        }
-    }
+    PacketFlow getOutbound();
 }

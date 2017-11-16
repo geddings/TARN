@@ -16,5 +16,5 @@ public interface FlowFactory {
      * @return a list of flows that can be inserted
      */
     List<OFMessage> buildFlows(Session session);
-
+    
 }

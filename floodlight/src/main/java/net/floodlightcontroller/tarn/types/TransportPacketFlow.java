@@ -112,4 +112,33 @@ public class TransportPacketFlow implements PacketFlow {
             return new TransportPacketFlow(ipProtocol, srcIp, dstIp, srcPort, dstPort, inPort, outPort);
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TransportPacketFlow that = (TransportPacketFlow) o;
+
+        if (ipProtocol != null ? !ipProtocol.equals(that.ipProtocol) : that.ipProtocol != null) return false;
+        if (srcIp != null ? !srcIp.equals(that.srcIp) : that.srcIp != null) return false;
+        if (dstIp != null ? !dstIp.equals(that.dstIp) : that.dstIp != null) return false;
+        if (srcPort != null ? !srcPort.equals(that.srcPort) : that.srcPort != null) return false;
+        if (dstPort != null ? !dstPort.equals(that.dstPort) : that.dstPort != null) return false;
+        if (inPort != null ? !inPort.equals(that.inPort) : that.inPort != null) return false;
+        return outPort != null ? outPort.equals(that.outPort) : that.outPort == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = ipProtocol != null ? ipProtocol.hashCode() : 0;
+        result = 31 * result + (srcIp != null ? srcIp.hashCode() : 0);
+        result = 31 * result + (dstIp != null ? dstIp.hashCode() : 0);
+        result = 31 * result + (srcPort != null ? srcPort.hashCode() : 0);
+        result = 31 * result + (dstPort != null ? dstPort.hashCode() : 0);
+        result = 31 * result + (inPort != null ? inPort.hashCode() : 0);
+        result = 31 * result + (outPort != null ? outPort.hashCode() : 0);
+        return result;
+    }
 }

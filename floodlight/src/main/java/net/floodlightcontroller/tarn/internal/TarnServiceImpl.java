@@ -47,6 +47,8 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
 
     private List<Session> sessions;
 
+//    private HashMap
+
     @Override
     public Collection<PrefixMapping> getPrefixMappings() {
         return mappingHandler.getMappings();
@@ -120,28 +122,46 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
      */
     @Override
     public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
-        if (msg.getType() == OFType.PACKET_IN) {
-            OFPacketIn pi = (OFPacketIn) msg;
-            OFPort inPort = OFMessageUtils.getInPort(pi);
-            Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
+        switch (msg.getType()) {
+            case PACKET_IN:
+                return this.processPacketInMessage(sw, (OFPacketIn)msg, cntx);
+            case FLOW_REMOVED:
+                return this.removeInactiveSession((OFPacketIn)msg, cntx);
+            case ERROR:
+                log.info("received an error {} from switch {}", msg, sw);
+                return Command.CONTINUE;
+            default:
+                log.error("received an unexpected message {} from switch {}", msg, sw);
+                return Command.CONTINUE;
+        }
 
-            if (eth.getEtherType() == EthType.IPv4) {
-                IPv4 ipv4 = (IPv4) eth.getPayload();
-                if (mappingHandler.isTarnDevice(ipv4)) {
-                    OFPort outPort = getOutPort(eth.getDestinationMACAddress(), sw.getId());
-                    Session session = sessionFactory.getSession(inPort, outPort, ipv4);
-                    if (session != null) {
-                        sessions.add(session);
-                        List<OFMessage> flows = flowFactory.buildFlows(session);
-                        sw.write(flows);
-                        sw.write(buildPacketOut(sw, pi));
-                        return Command.STOP;
-                    }
+    }
+
+    private Command processPacketInMessage(IOFSwitch sw, OFPacketIn pi, FloodlightContext cntx) {
+        OFPort inPort = OFMessageUtils.getInPort(pi);
+        Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
+
+        if (eth.getEtherType() == EthType.IPv4) {
+            IPv4 ipv4 = (IPv4) eth.getPayload();
+            if (mappingHandler.isTarnDevice(ipv4)) {
+                OFPort outPort = getOutPort(eth.getDestinationMACAddress(), sw.getId());
+                Session session = sessionFactory.getSession(inPort, outPort, ipv4);
+                if (session != null) {
+                    sessions.add(session);
+                    List<OFMessage> flows = flowFactory.buildFlows(session);
+                    sw.write(flows);
+                    sw.write(buildPacketOut(sw, pi));
+                    return Command.STOP;
                 }
-
             }
 
         }
+
+        return Command.CONTINUE;
+    }
+
+    private Command removeInactiveSession(OFPacketIn pi, FloodlightContext cntx) {
+
 
         return Command.CONTINUE;
     }

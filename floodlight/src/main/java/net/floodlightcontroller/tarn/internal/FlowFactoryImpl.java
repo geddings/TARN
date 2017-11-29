@@ -1,14 +1,12 @@
 package net.floodlightcontroller.tarn.internal;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import net.floodlightcontroller.tarn.FlowFactory;
 import net.floodlightcontroller.tarn.PacketFlow;
 import net.floodlightcontroller.tarn.Session;
 import net.floodlightcontroller.tarn.types.TransportPacketFlow;
-import org.projectfloodlight.openflow.protocol.OFFactories;
-import org.projectfloodlight.openflow.protocol.OFFactory;
-import org.projectfloodlight.openflow.protocol.OFMessage;
-import org.projectfloodlight.openflow.protocol.OFVersion;
+import org.projectfloodlight.openflow.protocol.*;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
@@ -20,7 +18,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The Flow Factory is intended to take all responsibility for creating
@@ -57,6 +57,7 @@ public class FlowFactoryImpl implements FlowFactory {
                 .setPriority(100)
                 .setMatch(match)
                 .setActions(actions)
+                .setFlags(ImmutableSet.of(OFFlowModFlags.SEND_FLOW_REM))
                 .build();
     }
 

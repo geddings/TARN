@@ -9,6 +9,7 @@ import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
 import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
+import net.floodlightcontroller.core.util.AppCookie;
 import net.floodlightcontroller.devicemanager.IDevice;
 import net.floodlightcontroller.devicemanager.IDeviceService;
 import net.floodlightcontroller.devicemanager.SwitchPort;
@@ -17,11 +18,9 @@ import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.tarn.*;
 import net.floodlightcontroller.tarn.web.RandomizerWebRoutable;
 import net.floodlightcontroller.util.OFMessageUtils;
-import org.projectfloodlight.openflow.protocol.OFMessage;
-import org.projectfloodlight.openflow.protocol.OFPacketIn;
-import org.projectfloodlight.openflow.protocol.OFPacketOut;
-import org.projectfloodlight.openflow.protocol.OFType;
+import org.projectfloodlight.openflow.protocol.*;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
+import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.types.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,9 +44,8 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
 
     private PrefixMappingHandler mappingHandler;
 
-    private List<Session> sessions;
-
-//    private HashMap
+    private HashMap<U64, Session> sessions;
+    public static final int TARN_SERVICE_APP_ID = 99;
 
     @Override
     public Collection<PrefixMapping> getPrefixMappings() {
@@ -61,7 +59,7 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
 
     @Override
     public Collection<Session> getSessions() {
-        return sessions;
+        return sessions.values();
     }
 
     @Override
@@ -79,7 +77,7 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
         mappingHandler = new PrefixMappingHandler();
         sessionFactory = new SessionFactoryImpl(mappingHandler);
         flowFactory = new FlowFactoryImpl();
-        sessions = new ArrayList<>();
+        sessions = new HashMap<>();
     }
 
     @Override
@@ -126,7 +124,7 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
             case PACKET_IN:
                 return this.processPacketInMessage(sw, (OFPacketIn)msg, cntx);
             case FLOW_REMOVED:
-                return this.removeInactiveSession((OFPacketIn)msg, cntx);
+                return this.removeInactiveSession((OFFlowRemoved) msg, cntx);
             case ERROR:
                 log.info("received an error {} from switch {}", msg, sw);
                 return Command.CONTINUE;
@@ -147,7 +145,8 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
                 OFPort outPort = getOutPort(eth.getDestinationMACAddress(), sw.getId());
                 Session session = sessionFactory.getSession(inPort, outPort, ipv4);
                 if (session != null) {
-                    sessions.add(session);
+//                    sessions.add(session);
+                    sessions.put(AppCookie.makeCookie(TARN_SERVICE_APP_ID, session.hashCode()), session);
                     List<OFMessage> flows = flowFactory.buildFlows(session);
                     sw.write(flows);
                     sw.write(buildPacketOut(sw, pi));
@@ -160,8 +159,19 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
         return Command.CONTINUE;
     }
 
-    private Command removeInactiveSession(OFPacketIn pi, FloodlightContext cntx) {
+    private Command removeInactiveSession(OFFlowRemoved flowRemMessage, FloodlightContext cntx) {
+        if (!flowRemMessage.getCookie().equals(U64.of(TARN_SERVICE_APP_ID))) {
+            return Command.CONTINUE;
+        }
+        if (log.isTraceEnabled()) {
+            log.trace("Old session {} will be removed", sessions.get(flowRemMessage.getCookie()));
+        }
 
+//        Match match = flowRemMessage.getMatch();
+        // If a flow remove message send to controller, it means that flow already expired
+        // We'll then remove the session that associated with that flow, so all the sessions remaining
+        // are the active session.
+        sessions.remove(flowRemMessage.getCookie());
 
         return Command.CONTINUE;
     }

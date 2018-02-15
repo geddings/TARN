@@ -31,7 +31,7 @@ public class PrefixMappingHandler {
         prefixMappings.put(mapping.getInternalIp(), mapping);
     }
 
-    void removeMapping(IPv4Address internalIp) {
+    public void removeMapping(IPv4Address internalIp) {
         prefixMappings.remove(internalIp);
     }
 

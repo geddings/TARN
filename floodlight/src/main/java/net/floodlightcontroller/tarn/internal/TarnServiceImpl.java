@@ -71,6 +71,11 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
     }
 
     @Override
+    public void removePrefixMapping(IPv4Address internalIp) {
+        mappingHandler.removeMapping(internalIp);
+    }
+
+    @Override
     public Collection<Session> getSessions() {
         return sessions;
     }

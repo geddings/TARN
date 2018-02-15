@@ -25,26 +25,37 @@ public class PrefixMappingResource extends ServerResource {
     @Post
     public void addPrefixMapping(String json) throws IOException {
         TarnService tarnService = (TarnService) getContext().getAttributes().get(TarnService.class.getCanonicalName());
+
+        if (json == null) {
+            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Must provide an internal-ip and external-prefix for a prefix mapping to be added.");
+            return;
+        }
+
         PrefixMapping mapping = new ObjectMapper()
                 .reader(PrefixMapping.class)
                 .readValue(json);
         tarnService.addPrefixMapping(mapping);
     }
-    
+
     @Delete
-    public void removePrefixMapping(String json) throws IOException{
+    public void removePrefixMapping(String json) throws IOException {
         TarnService tarnService = (TarnService) getContext().getAttributes().get(TarnService.class.getCanonicalName());
-        
+
         if (json == null) {
             getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Must provide an internal-ip in order for mapping to be removed.");
             return;
         }
-        
+
         JsonNode jsonNode = new ObjectMapper().readTree(json);
 
         JsonNode internalNode = jsonNode.get("internal-ip");
         if (internalNode != null) {
-            tarnService.removePrefixMapping(IPv4Address.of(internalNode.toString()));
+            try {
+                IPv4Address internalIp = IPv4Address.of(internalNode.asText());
+                tarnService.removePrefixMapping(internalIp);
+            } catch (IllegalArgumentException e) {
+                getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Please use a valid internal IP address.");
+            }
         } else {
             getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Must provide an internal-ip in order for mapping to be removed.");
         }

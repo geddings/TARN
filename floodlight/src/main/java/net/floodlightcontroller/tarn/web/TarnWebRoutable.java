@@ -9,13 +9,14 @@ import org.restlet.routing.Router;
  *
  *
  */
-public class RandomizerWebRoutable implements RestletRoutable {
+public class TarnWebRoutable implements RestletRoutable {
 
     @Override
     public Router getRestlet(Context context) {
         Router router = new Router(context);
         router.attach("/info/json", InfoResource.class);
         router.attach("/mapping/json", PrefixMappingResource.class);
+        router.attach("/config/json", ConfigResource.class);
         return router;
     }
 

@@ -15,7 +15,7 @@ import net.floodlightcontroller.devicemanager.SwitchPort;
 import net.floodlightcontroller.packet.*;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.tarn.*;
-import net.floodlightcontroller.tarn.web.RandomizerWebRoutable;
+import net.floodlightcontroller.tarn.web.TarnWebRoutable;
 import net.floodlightcontroller.util.OFMessageUtils;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFPacketIn;
@@ -39,6 +39,9 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
     private IDeviceService deviceService;
 
     static final EventBus eventBus = new EventBus();
+    
+    /* Configuration parameters */
+    private boolean enabled = true;
 
     private SessionFactory sessionFactory;
     private FlowFactory flowFactory;
@@ -46,6 +49,16 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
     private PrefixMappingHandler mappingHandler;
 
     private List<Session> sessions;
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    @Override
+    public void setEnable(boolean enable) {
+        enabled = enable;
+    }
 
     @Override
     public Collection<PrefixMapping> getPrefixMappings() {
@@ -83,7 +96,7 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
     @Override
     public void startUp(FloodlightModuleContext context) throws FloodlightModuleException {
         floodlightProvider.addOFMessageListener(OFType.PACKET_IN, this);
-        restApiService.addRestletRoutable(new RandomizerWebRoutable());
+        restApiService.addRestletRoutable(new TarnWebRoutable());
     }
 
     @Override
@@ -120,6 +133,11 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
      */
     @Override
     public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
+        if (!enabled) {
+            log.trace("TARN Service not enabled. Continuing.");
+            return Command.CONTINUE;
+        }
+        
         if (msg.getType() == OFType.PACKET_IN) {
             OFPacketIn pi = (OFPacketIn) msg;
             OFPort inPort = OFMessageUtils.getInPort(pi);

@@ -16,7 +16,7 @@ public class InfoResource extends ServerResource {
     protected static Logger log = LoggerFactory.getLogger(InfoResource.class);
 
     @Get
-    public ImmutableMap<String, Object> getTARNInfo() {
+    public ImmutableMap<String, Object> getTarnInfo() {
         TarnService tarnService = (TarnService) getContext().getAttributes().get(TarnService.class.getCanonicalName());
         ImmutableMap.Builder<String, Object> info = new ImmutableMap.Builder<>();
         int i = 0;

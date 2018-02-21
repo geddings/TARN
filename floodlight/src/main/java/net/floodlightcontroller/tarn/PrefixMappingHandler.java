@@ -1,7 +1,8 @@
 package net.floodlightcontroller.tarn;
 
 import net.floodlightcontroller.packet.IPv4;
-import org.projectfloodlight.openflow.types.IPv4Address;
+import net.floodlightcontroller.packet.IPv6;
+import org.projectfloodlight.openflow.types.IPAddress;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -15,7 +16,7 @@ import java.util.Optional;
  */
 public class PrefixMappingHandler {
 
-    private Map<IPv4Address, PrefixMapping> prefixMappings;
+    private Map<IPAddress, PrefixMapping> prefixMappings;
 
     public PrefixMappingHandler() {
         prefixMappings = new HashMap<>();
@@ -31,11 +32,11 @@ public class PrefixMappingHandler {
         prefixMappings.put(mapping.getInternalIp(), mapping);
     }
 
-    public void removeMapping(IPv4Address internalIp) {
+    public void removeMapping(IPAddress internalIp) {
         prefixMappings.remove(internalIp);
     }
 
-    Optional<PrefixMapping> getMapping(IPv4Address internalIp) {
+    Optional<PrefixMapping> getMapping(IPAddress internalIp) {
         return Optional.ofNullable(prefixMappings.get(internalIp));
     }
 
@@ -47,15 +48,15 @@ public class PrefixMappingHandler {
      * Returns a mapping associated with the given IP address, if it exists. A mapping is associated if the IP address
      * corresponds to an internal IP or is a part of an external prefix range in any of the existing mappings.
      *
-     * @param iPv4Address the IP address associated with a prefix mapping
+     * @param ipAddress the IP address associated with a prefix mapping
      * @return an optional prefix mapping
      */
-    public Optional<PrefixMapping> getAssociatedMapping(IPv4Address iPv4Address) {
-        if (isInternalIp(iPv4Address)) {
-            return Optional.of(prefixMappings.get(iPv4Address));
-        } else if (isExternalIp(iPv4Address)) {
+    public Optional<PrefixMapping> getAssociatedMapping(IPAddress ipAddress) {
+        if (isInternalIp(ipAddress)) {
+            return Optional.of(prefixMappings.get(ipAddress));
+        } else if (isExternalIp(ipAddress)) {
             return prefixMappings.values().stream()
-                    .filter(mapping -> mapping.getCurrentPrefix().contains(iPv4Address))
+                    .filter(mapping -> mapping.getCurrentPrefix().contains(ipAddress))
                     .findAny();
         } else {
             return Optional.empty();
@@ -73,11 +74,15 @@ public class PrefixMappingHandler {
         return containsInternalIp(iPv4) || containsExternalIp(iPv4);
     }
 
-    Boolean isInternalIp(IPv4Address iPv4Address) {
+    public Boolean isTarnDevice(IPv6 iPv6) {
+        return containsInternalIp(iPv6) || containsExternalIp(iPv6);
+    }
+
+    Boolean isInternalIp(IPAddress iPv4Address) {
         return prefixMappings.containsKey(iPv4Address);
     }
 
-    Boolean isExternalIp(IPv4Address iPv4Address) {
+    Boolean isExternalIp(IPAddress iPv4Address) {
         return prefixMappings.values().stream()
                 .map(PrefixMapping::getCurrentPrefix)
                 .anyMatch(prefix -> prefix.contains(iPv4Address));
@@ -89,5 +94,13 @@ public class PrefixMappingHandler {
 
     Boolean containsExternalIp(IPv4 iPv4) {
         return isExternalIp(iPv4.getSourceAddress()) || isExternalIp(iPv4.getDestinationAddress());
+    }
+
+    public Boolean containsInternalIp(IPv6 iPv6) {
+        return isInternalIp(iPv6.getSourceAddress()) || isInternalIp(iPv6.getDestinationAddress());
+    }
+
+    Boolean containsExternalIp(IPv6 iPv6) {
+        return isExternalIp(iPv6.getSourceAddress()) || isExternalIp(iPv6.getDestinationAddress());
     }
 }

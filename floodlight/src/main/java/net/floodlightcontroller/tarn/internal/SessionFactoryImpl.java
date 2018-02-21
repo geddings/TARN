@@ -1,9 +1,13 @@
 package net.floodlightcontroller.tarn.internal;
 
 import net.floodlightcontroller.packet.IPv4;
+import net.floodlightcontroller.packet.IPv6;
 import net.floodlightcontroller.packet.TCP;
 import net.floodlightcontroller.packet.UDP;
-import net.floodlightcontroller.tarn.*;
+import net.floodlightcontroller.tarn.PrefixMapping;
+import net.floodlightcontroller.tarn.PrefixMappingHandler;
+import net.floodlightcontroller.tarn.Session;
+import net.floodlightcontroller.tarn.SessionFactory;
 import net.floodlightcontroller.tarn.types.*;
 import net.floodlightcontroller.tarn.utils.IPGenerator;
 import org.projectfloodlight.openflow.types.IPv4Address;
@@ -34,6 +38,21 @@ public class SessionFactoryImpl implements SessionFactory {
             return buildUDPSession(inPort, outPort, ipv4, udp);
         } else if (ipv4.getProtocol() == IpProtocol.ICMP) {
             return buildICMPSession(inPort, outPort, ipv4);
+        }
+
+        return null;
+    }
+
+    public Session getSession(OFPort inPort, OFPort outPort, IPv6 ipv6) {
+
+        if (ipv6.getNextHeader() == IpProtocol.TCP) {
+            TCP tcp = (TCP) ipv6.getPayload();
+            //return buildTCPSession(inPort, outPort, ipv6, tcp);
+        } else if (ipv6.getNextHeader() == IpProtocol.UDP) {
+            UDP udp = (UDP) ipv6.getPayload();
+            //return buildUDPSession(inPort, outPort, ipv6, udp);
+        } else if (ipv6.getNextHeader() == IpProtocol.ICMP) {
+            //return buildICMPSession(inPort, outPort, ipv6);
         }
 
         return null;

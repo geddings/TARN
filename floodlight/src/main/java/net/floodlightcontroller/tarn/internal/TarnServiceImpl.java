@@ -168,7 +168,19 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
                         return Command.STOP;
                     }
                 }
-
+            } else if (eth.getEtherType() == EthType.IPv6) {
+                IPv6 ipv6 = (IPv6) eth.getPayload();
+                if (mappingHandler.isTarnDevice(ipv6)) {
+                    OFPort outPort = getOutPort(eth.getDestinationMACAddress(), sw.getId());
+//                    Session session = sessionFactory.getSession(inPort, outPort, ipv6);
+//                    if (session != null) {
+//                        sessions.add(session);
+//                        List<OFMessage> flows = flowFactory.buildFlows(session);
+//                        sw.write(flows);
+//                        sw.write(buildPacketOut(sw, pi));
+//                        return Command.STOP;
+//                    }
+                }
             }
 
         }

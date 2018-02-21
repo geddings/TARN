@@ -78,11 +78,11 @@ public class PrefixMappingHandler {
         return containsInternalIp(iPv6) || containsExternalIp(iPv6);
     }
 
-    Boolean isInternalIp(IPAddress ipAddress) {
+    public Boolean isInternalIp(IPAddress ipAddress) {
         return prefixMappings.containsKey(ipAddress);
     }
 
-    Boolean isExternalIp(IPAddress ipAddress) {
+    public Boolean isExternalIp(IPAddress ipAddress) {
         return prefixMappings.values().stream()
                 .map(PrefixMapping::getCurrentPrefix)
                 .anyMatch(prefix -> prefix.contains(ipAddress));

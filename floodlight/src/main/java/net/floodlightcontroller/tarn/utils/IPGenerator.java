@@ -1,9 +1,6 @@
 package net.floodlightcontroller.tarn.utils;
 
-import org.projectfloodlight.openflow.types.IPv4Address;
-import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
-import org.projectfloodlight.openflow.types.IPv6Address;
-import org.projectfloodlight.openflow.types.IPv6AddressWithMask;
+import org.projectfloodlight.openflow.types.*;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.Random;
@@ -21,6 +18,14 @@ public class IPGenerator {
         throw new IllegalStateException("Utility class");
     }
 
+    public static IPAddress getRandomAddressFrom(IPAddressWithMask prefix) {
+        if (prefix instanceof IPv4AddressWithMask) {
+            return getRandomAddressFrom((IPv4AddressWithMask) prefix);
+        } else {
+            return getRandomAddressFrom((IPv6AddressWithMask) prefix);
+        }
+    }
+    
     /**
      * Given a prefix, generates and returns and returns a random IP address within the prefix.
      *

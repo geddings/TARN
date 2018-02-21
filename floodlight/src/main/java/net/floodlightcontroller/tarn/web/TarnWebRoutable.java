@@ -14,9 +14,10 @@ public class TarnWebRoutable implements RestletRoutable {
     @Override
     public Router getRestlet(Context context) {
         Router router = new Router(context);
-        router.attach("/info/json", InfoResource.class);
-        router.attach("/mapping/json", PrefixMappingResource.class);
-        router.attach("/config/json", ConfigResource.class);
+        router.attach("/info", InfoResource.class);
+        router.attach("/mapping", MappingsResource.class);
+        router.attach("/mapping/{internal-ip}", MappingResource.class);
+        router.attach("/config", ConfigResource.class);
         return router;
     }
 

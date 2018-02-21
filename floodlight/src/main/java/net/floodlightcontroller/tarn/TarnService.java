@@ -4,6 +4,7 @@ import net.floodlightcontroller.core.module.IFloodlightService;
 import org.projectfloodlight.openflow.types.IPv4Address;
 
 import java.util.Collection;
+import java.util.Optional;
 
 /**
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 11/2/17.
@@ -11,6 +12,8 @@ import java.util.Collection;
 public interface TarnService extends IFloodlightService {
 
     Collection<PrefixMapping> getPrefixMappings();
+
+    Optional<PrefixMapping> getPrefixMapping(IPv4Address internalIp);
 
     void addPrefixMapping(PrefixMapping mapping);
     

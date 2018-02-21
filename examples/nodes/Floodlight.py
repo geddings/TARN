@@ -82,90 +82,24 @@ class Floodlight(Controller):
             "internal-ip"    : internal_ip,
             "external-prefix": external_prefix
         }
-        ret = self.rest_call('/wm/tarn/mapping/json', data, 'POST')
+        ret = self.rest_call('/wm/tarn/mapping', data, 'POST')
         return ret[0] == 200
 
     def getMappings(self):
-        ret = self.rest_call('/wm/tarn/mapping/json', '', 'GET')
+        ret = self.rest_call('/wm/tarn/mapping', '', 'GET')
         return ret[2]
 
     def getInfo(self):
         """Returns general info about the TARN controller."""
-        ret = self.rest_call('wm/tarn/info/json', '', 'GET')
+        ret = self.rest_call('wm/tarn/info', '', 'GET')
         return ret[2]
 
-    def configure(self, lan_port, wan_port):
+    def configure(self, enable):
         """Configures TARN with necessary info."""
         data = {
-            "lanport": lan_port,
-            "wanport": wan_port
+            "enable": enable
         }
-        ret = self.rest_call('/wm/tarn/config/json', data, 'POST')
-        return ret[0] == 200
-
-    def getASes(self):
-        """Returns all configured Autonomous Systems from the TARN controller."""
-        ret = self.rest_call('wm/tarn/as/json', '', 'GET')
-        return ret[2]
-
-    def getAS(self, as_number):
-        """Returns the specified Autonomous Systems from the TARN controller."""
-        ret = self.rest_call('wm/tarn/as/' + as_number + '/json', '', 'GET')
-        return ret[2]
-
-    def addAS(self, as_number, internal_prefix):
-        """Adds an Autonomous System to the TARN controller with a given AS number and internal prefix."""
-        data = {
-            "as-number"      : as_number,
-            "internal-prefix": internal_prefix
-        }
-        ret = self.rest_call('/wm/tarn/as/json', data, 'POST')
-        return ret[0] == 200
-
-    def addPrefixToAS(self, as_number, prefix):
-        """Adds a prefix to the prefix pool of the given AS number if the AS has already been added to the TARN
-        controller."""
-        data = {
-            "prefix": prefix
-        }
-        ret = self.rest_call('/wm/tarn/as/' + as_number + '/json', data, 'POST')
-        return ret[0] == 200
-
-    def removePrefixFromAS(self, as_number, prefix):
-        """Attempts to remove the given prefix from the prefix pool of the given AS number if the AS has already been
-        added to the TARN controller."""
-        data = {
-            "prefix": prefix
-        }
-        ret = self.rest_call('/wm/tarn/as/' + as_number + '/json', data, 'DELETE')
-        return ret[0] == 200
-
-    def getHosts(self):
-        """Returns all configured hosts from the TARN controller."""
-        ret = self.rest_call('wm/tarn/host/json', '', 'GET')
-        return ret[2]
-
-    def addHost(self, internal_address, member_as):
-        """Adds a Host to the TARN controller with a given internal address and member AS."""
-        data = {
-            "internal-address": internal_address,
-            "member-as"       : member_as
-        }
-        ret = self.rest_call('/wm/tarn/host/json', data, 'POST')
-        return ret[0] == 200
-
-    def setLanPort(self, port):
-        data = {
-            "localport": str(port)
-        }
-        ret = self.rest_call('/wm/randomizer/config/json', data, 'POST')
-        return ret[0] == 200
-
-    def setWanPort(self, port):
-        data = {
-            "wanport": str(port)
-        }
-        ret = self.rest_call('/wm/randomizer/config/json', data, 'POST')
+        ret = self.rest_call('/wm/tarn/config', data, 'POST')
         return ret[0] == 200
 
     def createUniqueFloodlightPropertiesFile(self):

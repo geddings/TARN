@@ -13,7 +13,7 @@ import java.io.IOException;
 /**
  * Created by @geddings on 11/8/17.
  */
-public class PrefixMappingResource extends ServerResource {
+public class MappingsResource extends ServerResource {
 
     @Get
     public Object getPrefixMappings() {
@@ -23,18 +23,22 @@ public class PrefixMappingResource extends ServerResource {
 
     @Put
     @Post
-    public void addPrefixMapping(String json) throws IOException {
+    public Object addPrefixMapping(String json) throws IOException {
         TarnService tarnService = (TarnService) getContext().getAttributes().get(TarnService.class.getCanonicalName());
 
         if (json == null) {
-            getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Must provide an internal-ip and external-prefix for a prefix mapping to be added.");
-            return;
+            setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Must provide an internal-ip and external-prefix for a prefix mapping to be added.");
+            return null;
         }
 
         PrefixMapping mapping = new ObjectMapper()
                 .reader(PrefixMapping.class)
                 .readValue(json);
         tarnService.addPrefixMapping(mapping);
+
+        setStatus(Status.SUCCESS_CREATED, "Prefix mapping successfully created.");
+        setLocationRef(getReference().toString() + "/" + mapping.getInternalIp());
+        return mapping;
     }
 
     @Delete

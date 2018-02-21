@@ -66,6 +66,13 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
     }
 
     @Override
+    public Optional<PrefixMapping> getPrefixMapping(IPv4Address internalIp) {
+        return mappingHandler.getMappings().stream()
+                .filter(m -> m.getInternalIp().equals(internalIp))
+                .findAny();
+    }
+
+    @Override
     public void addPrefixMapping(PrefixMapping mapping) {
         mappingHandler.addMapping(mapping);
     }

@@ -82,16 +82,16 @@ class Floodlight(Controller):
             "internal-ip"    : internal_ip,
             "external-prefix": external_prefix
         }
-        ret = self.rest_call('/wm/tarn/mapping/json', data, 'POST')
+        ret = self.rest_call('/wm/tarn/mapping', data, 'POST')
         return ret[0] == 200
 
     def getMappings(self):
-        ret = self.rest_call('/wm/tarn/mapping/json', '', 'GET')
+        ret = self.rest_call('/wm/tarn/mapping', '', 'GET')
         return ret[2]
 
     def getInfo(self):
         """Returns general info about the TARN controller."""
-        ret = self.rest_call('wm/tarn/info/json', '', 'GET')
+        ret = self.rest_call('wm/tarn/info', '', 'GET')
         return ret[2]
 
     def configure(self, lan_port, wan_port):
@@ -100,7 +100,7 @@ class Floodlight(Controller):
             "lanport": lan_port,
             "wanport": wan_port
         }
-        ret = self.rest_call('/wm/tarn/config/json', data, 'POST')
+        ret = self.rest_call('/wm/tarn/config', data, 'POST')
         return ret[0] == 200
 
     def getASes(self):

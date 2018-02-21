@@ -10,6 +10,7 @@ import net.floodlightcontroller.tarn.Session;
 import net.floodlightcontroller.tarn.SessionFactory;
 import net.floodlightcontroller.tarn.types.*;
 import net.floodlightcontroller.tarn.utils.IPGenerator;
+import org.projectfloodlight.openflow.types.IPVersion;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.IpProtocol;
 import org.projectfloodlight.openflow.types.OFPort;
@@ -72,8 +73,8 @@ public class SessionFactoryImpl implements SessionFactory {
         TransportPacketFlow.Builder connection1 = TransportPacketFlow.builder();
         TransportPacketFlow.Builder connection2 = TransportPacketFlow.builder();
 
-        connection1.ipProtocol(IpProtocol.TCP);
-        connection2.ipProtocol(IpProtocol.TCP);
+        connection1.ipVersion(IPVersion.IPv4).ipProtocol(IpProtocol.TCP);
+        connection2.ipVersion(IPVersion.IPv4).ipProtocol(IpProtocol.TCP);
 
         /* Start filling in information about the two connections from the packet in message.
         *  Connection1 will always be the connection that the packet in message belongs to and
@@ -112,8 +113,8 @@ public class SessionFactoryImpl implements SessionFactory {
         TransportPacketFlow.Builder connection1 = TransportPacketFlow.builder();
         TransportPacketFlow.Builder connection2 = TransportPacketFlow.builder();
 
-        connection1.ipProtocol(IpProtocol.UDP);
-        connection2.ipProtocol(IpProtocol.UDP);        
+        connection1.ipVersion(IPVersion.IPv4).ipProtocol(IpProtocol.UDP);
+        connection2.ipVersion(IPVersion.IPv4).ipProtocol(IpProtocol.UDP);        
         
         /* Start filling in information about the two connections from the packet in message.
         *  Connection1 will always be the connection that the packet in message belongs to and
@@ -151,6 +152,9 @@ public class SessionFactoryImpl implements SessionFactory {
     private ICMPSession buildICMPSession(OFPort inPort, OFPort outPort, IPv4 ipv4) {
         ControlPacketFlow.Builder connection1 = ControlPacketFlow.builder();
         ControlPacketFlow.Builder connection2 = ControlPacketFlow.builder();
+        
+        connection1.ipVersion(IPVersion.IPv4);
+        connection2.ipVersion(IPVersion.IPv4);
         
         /* Start filling in information about the two connections from the packet in message.
         *  Connection1 will always be the connection that the packet in message belongs to and

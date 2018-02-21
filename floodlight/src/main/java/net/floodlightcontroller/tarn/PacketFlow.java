@@ -1,6 +1,7 @@
 package net.floodlightcontroller.tarn;
 
-import org.projectfloodlight.openflow.types.IPv4Address;
+import org.projectfloodlight.openflow.types.IPAddress;
+import org.projectfloodlight.openflow.types.IPVersion;
 import org.projectfloodlight.openflow.types.OFPort;
 
 /**
@@ -8,8 +9,9 @@ import org.projectfloodlight.openflow.types.OFPort;
  */
 public interface PacketFlow {
     
-    IPv4Address getSrcIp();
-    IPv4Address getDstIp();
+    IPVersion getIpVersion();
+    IPAddress getSrcIp();
+    IPAddress getDstIp();
     OFPort getInPort();
     OFPort getOutPort();
     

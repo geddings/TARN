@@ -14,6 +14,7 @@ import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.protocol.oxm.OFOxms;
 import org.projectfloodlight.openflow.types.EthType;
+import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.IpProtocol;
 import org.projectfloodlight.openflow.types.OFBufferId;
 import org.slf4j.Logger;
@@ -64,8 +65,8 @@ public class FlowFactoryImpl implements FlowFactory {
         Match.Builder builder = factory.buildMatch()
                 .setExact(MatchField.IN_PORT, packetFlow.getInPort())
                 .setExact(MatchField.ETH_TYPE, EthType.IPv4)
-                .setExact(MatchField.IPV4_SRC, packetFlow.getSrcIp())
-                .setExact(MatchField.IPV4_DST, packetFlow.getDstIp());
+                .setExact(MatchField.IPV4_SRC, (IPv4Address) packetFlow.getSrcIp())
+                .setExact(MatchField.IPV4_DST, (IPv4Address) packetFlow.getDstIp());
 
         if (packetFlow instanceof TransportPacketFlow) {
             TransportPacketFlow transportPacketFlow = (TransportPacketFlow) packetFlow;
@@ -91,7 +92,7 @@ public class FlowFactoryImpl implements FlowFactory {
         if (!packetFlow.getSrcIp().equals(oppositePacketFlow.getDstIp())) {
             actions.add(factory.actions()
                     .buildSetField()
-                    .setField(oxms.ipv4Src(oppositePacketFlow.getDstIp()))
+                    .setField(oxms.ipv4Src((IPv4Address) oppositePacketFlow.getDstIp()))
                     .build());
         }
 
@@ -99,7 +100,7 @@ public class FlowFactoryImpl implements FlowFactory {
         if (!packetFlow.getDstIp().equals(oppositePacketFlow.getSrcIp())) {
             actions.add(factory.actions()
                     .buildSetField()
-                    .setField(oxms.ipv4Dst(oppositePacketFlow.getSrcIp()))
+                    .setField(oxms.ipv4Dst((IPv4Address) oppositePacketFlow.getSrcIp()))
                     .build());
         }
 

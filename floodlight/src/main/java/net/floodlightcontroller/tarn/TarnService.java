@@ -1,6 +1,7 @@
 package net.floodlightcontroller.tarn;
 
 import net.floodlightcontroller.core.module.IFloodlightService;
+import org.projectfloodlight.openflow.types.IPAddress;
 import org.projectfloodlight.openflow.types.IPv4Address;
 
 import java.util.Collection;
@@ -17,7 +18,7 @@ public interface TarnService extends IFloodlightService {
 
     void addPrefixMapping(PrefixMapping mapping);
     
-    void removePrefixMapping(IPv4Address internalIp);
+    void removePrefixMapping(IPAddress internalIp);
 
     Collection<Session> getSessions();
 

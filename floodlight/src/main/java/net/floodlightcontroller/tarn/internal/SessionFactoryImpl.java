@@ -10,10 +10,7 @@ import net.floodlightcontroller.tarn.Session;
 import net.floodlightcontroller.tarn.SessionFactory;
 import net.floodlightcontroller.tarn.types.*;
 import net.floodlightcontroller.tarn.utils.IPGenerator;
-import org.projectfloodlight.openflow.types.IPVersion;
-import org.projectfloodlight.openflow.types.IPv4Address;
-import org.projectfloodlight.openflow.types.IpProtocol;
-import org.projectfloodlight.openflow.types.OFPort;
+import org.projectfloodlight.openflow.types.*;
 
 import java.util.Optional;
 
@@ -152,7 +149,7 @@ public class SessionFactoryImpl implements SessionFactory {
     private ICMPSession buildICMPSession(OFPort inPort, OFPort outPort, IPv4 ipv4) {
         ControlPacketFlow.Builder connection1 = ControlPacketFlow.builder();
         ControlPacketFlow.Builder connection2 = ControlPacketFlow.builder();
-        
+
         connection1.ipVersion(IPVersion.IPv4);
         connection2.ipVersion(IPVersion.IPv4);
         
@@ -184,18 +181,30 @@ public class SessionFactoryImpl implements SessionFactory {
             return new ICMPSession(connection1.build(), connection2.build());
         }
     }
-
-
+    
     private IPv4Address getReturnAddress(IPv4Address iPv4Address) {
         Optional<PrefixMapping> mapping = mappingHandler.getAssociatedMapping(iPv4Address);
         if (mapping.isPresent()) {
+            IPv4AddressWithMask currentPrefix = (IPv4AddressWithMask) mapping.get().getCurrentPrefix();
             if (mapping.get().getInternalIp().equals(iPv4Address)) {
-                return IPGenerator.getRandomAddressFrom(mapping.get().getCurrentPrefix());
-            } else if (mapping.get().getCurrentPrefix().contains(iPv4Address)) {
-                return mapping.get().getInternalIp();
+                return IPGenerator.getRandomAddressFrom(currentPrefix);
+            } else if (currentPrefix.contains(iPv4Address)) {
+                return (IPv4Address) mapping.get().getInternalIp();
             }
         }
-
         return iPv4Address;
+    }
+
+    private IPv6Address getReturnAddress(IPv6Address iPv6Address) {
+        Optional<PrefixMapping> mapping = mappingHandler.getAssociatedMapping(iPv6Address);
+        if (mapping.isPresent()) {
+            IPv6AddressWithMask currentPrefix = (IPv6AddressWithMask) mapping.get().getCurrentPrefix();
+            if (mapping.get().getInternalIp().equals(iPv6Address)) {
+                return IPGenerator.getRandomAddressFrom(currentPrefix);
+            } else if (currentPrefix.contains(iPv6Address)) {
+                return (IPv6Address) mapping.get().getInternalIp();
+            }
+        }
+        return iPv6Address;
     }
 }

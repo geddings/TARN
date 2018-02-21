@@ -78,14 +78,14 @@ public class PrefixMappingHandler {
         return containsInternalIp(iPv6) || containsExternalIp(iPv6);
     }
 
-    Boolean isInternalIp(IPAddress iPv4Address) {
-        return prefixMappings.containsKey(iPv4Address);
+    Boolean isInternalIp(IPAddress ipAddress) {
+        return prefixMappings.containsKey(ipAddress);
     }
 
-    Boolean isExternalIp(IPAddress iPv4Address) {
+    Boolean isExternalIp(IPAddress ipAddress) {
         return prefixMappings.values().stream()
                 .map(PrefixMapping::getCurrentPrefix)
-                .anyMatch(prefix -> prefix.contains(iPv4Address));
+                .anyMatch(prefix -> prefix.contains(ipAddress));
     }
 
     public Boolean containsInternalIp(IPv4 iPv4) {

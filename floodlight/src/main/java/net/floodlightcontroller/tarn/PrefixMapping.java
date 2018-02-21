@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import net.floodlightcontroller.tarn.web.PrefixMappingSerializer;
+import org.projectfloodlight.openflow.types.IPAddress;
+import org.projectfloodlight.openflow.types.IPAddressWithMask;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 
@@ -16,8 +18,8 @@ import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
 @JsonSerialize(using = PrefixMappingSerializer.class)
 public class PrefixMapping {
 
-    private final IPv4Address internalIp;
-    private final IPv4AddressWithMask currentPrefix;
+    private final IPAddress internalIp;
+    private final IPAddressWithMask currentPrefix;
 
     /**
      * Creates a new TARN prefix mapping.
@@ -31,11 +33,11 @@ public class PrefixMapping {
         this.currentPrefix = IPv4AddressWithMask.of(currentPrefix);
     }
 
-    public IPv4Address getInternalIp() {
+    public IPAddress getInternalIp() {
         return internalIp;
     }
 
-    public IPv4AddressWithMask getCurrentPrefix() {
+    public IPAddressWithMask getCurrentPrefix() {
         return currentPrefix;
     }
 

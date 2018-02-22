@@ -9,7 +9,7 @@ import net.floodlightcontroller.tarn.PrefixMappingHandler;
 import net.floodlightcontroller.tarn.Session;
 import net.floodlightcontroller.tarn.SessionFactory;
 import net.floodlightcontroller.tarn.types.*;
-import net.floodlightcontroller.tarn.utils.IPGenerator;
+import net.floodlightcontroller.tarn.utils.IPUtils;
 import org.projectfloodlight.openflow.types.*;
 
 import java.util.Optional;
@@ -33,9 +33,9 @@ public class SessionFactoryImpl implements SessionFactory {
             return buildTCPSession(ipv4.getSourceAddress(), ipv4.getDestinationAddress(), IPVersion.IPv4, inPort, outPort, tcp);
         } else if (ipv4.getProtocol() == IpProtocol.UDP) {
             UDP udp = (UDP) ipv4.getPayload();
-            return buildUDPSession(inPort, outPort, ipv4, udp);
+            return buildUDPSession(ipv4.getSourceAddress(), ipv4.getDestinationAddress(), IPVersion.IPv4, inPort, outPort, udp);
         } else if (ipv4.getProtocol() == IpProtocol.ICMP) {
-            return buildICMPSession(inPort, outPort, ipv4);
+            return buildICMPSession(ipv4.getSourceAddress(), ipv4.getDestinationAddress(), IPVersion.IPv4, inPort, outPort);
         }
 
         return null;
@@ -49,9 +49,9 @@ public class SessionFactoryImpl implements SessionFactory {
             return buildTCPSession(ipv6.getSourceAddress(), ipv6.getDestinationAddress(), IPVersion.IPv6, inPort, outPort, tcp);
         } else if (ipv6.getNextHeader() == IpProtocol.UDP) {
             UDP udp = (UDP) ipv6.getPayload();
-            //return buildUDPSession(inPort, outPort, ipv6, udp);
+            return buildUDPSession(ipv6.getSourceAddress(), ipv6.getDestinationAddress(), IPVersion.IPv6, inPort, outPort, udp);
         } else if (ipv6.getNextHeader() == IpProtocol.ICMP) {
-            //return buildICMPSession(inPort, outPort, ipv6);
+            return buildICMPSession(ipv6.getSourceAddress(), ipv6.getDestinationAddress(), IPVersion.IPv6, inPort, outPort);
         }
 
         return null;
@@ -107,7 +107,7 @@ public class SessionFactoryImpl implements SessionFactory {
         }
     }
 
-    private UDPSession buildUDPSession(OFPort inPort, OFPort outPort, IPv4 ipv4, UDP udp) {
+    private UDPSession buildUDPSession(IPAddress srcIp, IPAddress dstIp, IPVersion ipVersion, OFPort inPort, OFPort outPort, UDP udp) {
         TransportPacketFlow.Builder connection1 = TransportPacketFlow.builder();
         TransportPacketFlow.Builder connection2 = TransportPacketFlow.builder();
 
@@ -119,8 +119,8 @@ public class SessionFactoryImpl implements SessionFactory {
         *  Connection2 will always be the opposite connection. It can't yet be known which connection
         *  is inbound and which is outbound. */
         connection1.inPort(inPort)
-                .srcIp(ipv4.getSourceAddress())
-                .dstIp(ipv4.getDestinationAddress())
+                .srcIp(srcIp)
+                .dstIp(dstIp)
                 .srcPort(udp.getSourcePort())
                 .dstPort(udp.getDestinationPort());
 
@@ -132,22 +132,22 @@ public class SessionFactoryImpl implements SessionFactory {
         connection2.inPort(outPort);
 
         /* Using the source address of Connection1, determine the destination address of Connection2. */
-        connection2.dstIp(getReturnAddress(ipv4.getSourceAddress()));
+        connection2.dstIp(getReturnAddress(srcIp));
 
         /* Using the destination address of Connection1, determine the source address of Connection2. */
-        connection2.srcIp(getReturnAddress(ipv4.getDestinationAddress()));
+        connection2.srcIp(getReturnAddress(dstIp));
 
         /* Determine which connection is inbound and which is outbound.
          * An outbound connection is one that will match on INTERNAL IP addresses.
          * An inbound connection is one that will match on EXTERNAL IP addresses. */
-        if (mappingHandler.isInternalIp(ipv4.getSourceAddress()) || mappingHandler.isInternalIp(ipv4.getDestinationAddress())) {
+        if (mappingHandler.isInternalIp(srcIp) || mappingHandler.isInternalIp(dstIp)) {
             return new UDPSession(connection2.build(), connection1.build());
         } else {
             return new UDPSession(connection1.build(), connection2.build());
         }
     }
 
-    private ICMPSession buildICMPSession(OFPort inPort, OFPort outPort, IPv4 ipv4) {
+    private ICMPSession buildICMPSession(IPAddress srcIp, IPAddress dstIp, IPVersion ipVersion, OFPort inPort, OFPort outPort) {
         ControlPacketFlow.Builder connection1 = ControlPacketFlow.builder();
         ControlPacketFlow.Builder connection2 = ControlPacketFlow.builder();
 
@@ -159,8 +159,8 @@ public class SessionFactoryImpl implements SessionFactory {
         *  Connection2 will always be the opposite connection. It can't yet be known which connection
         *  is inbound and which is outbound. */
         connection1.inPort(inPort)
-                .srcIp(ipv4.getSourceAddress())
-                .dstIp(ipv4.getDestinationAddress());
+                .srcIp(srcIp)
+                .dstIp(dstIp);
 
         connection2.outPort(inPort);
 
@@ -168,15 +168,15 @@ public class SessionFactoryImpl implements SessionFactory {
         connection2.inPort(outPort);
 
         /* Using the source address of Connection1, determine the destination address of Connection2. */
-        connection2.dstIp(getReturnAddress(ipv4.getSourceAddress()));
+        connection2.dstIp(getReturnAddress(srcIp));
 
         /* Using the destination address of Connection1, determine the source address of Connection2. */
-        connection2.srcIp(getReturnAddress(ipv4.getDestinationAddress()));
+        connection2.srcIp(getReturnAddress(dstIp));
 
         /* Determine which connection is inbound and which is outbound.
          * An outbound connection is one that will match on INTERNAL IP addresses.
          * An inbound connection is one that will match on EXTERNAL IP addresses. */
-        if (mappingHandler.isInternalIp(ipv4.getSourceAddress()) || mappingHandler.isInternalIp(ipv4.getDestinationAddress())) {
+        if (mappingHandler.isInternalIp(srcIp) || mappingHandler.isInternalIp(dstIp)) {
             return new ICMPSession(connection2.build(), connection1.build());
         } else {
             return new ICMPSession(connection1.build(), connection2.build());
@@ -188,7 +188,7 @@ public class SessionFactoryImpl implements SessionFactory {
         if (mapping.isPresent()) {
             IPAddressWithMask currentPrefix = mapping.get().getCurrentPrefix();
             if (mapping.get().getInternalIp().equals(ipAddress)) {
-                return IPGenerator.getRandomAddressFrom(currentPrefix);
+                return IPUtils.getRandomAddressFrom(currentPrefix);
             } else if (currentPrefix.contains(ipAddress)) {
                 return mapping.get().getInternalIp();
             }

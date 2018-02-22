@@ -1,10 +1,8 @@
 package net.floodlightcontroller.tarn.internal;
 
-import com.google.common.collect.ImmutableList;
-import net.floodlightcontroller.tarn.FlowFactory;
-import net.floodlightcontroller.tarn.PacketFlow;
-import net.floodlightcontroller.tarn.Session;
-import net.floodlightcontroller.tarn.types.TransportPacketFlow;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.projectfloodlight.openflow.protocol.OFFactories;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFMessage;
@@ -12,16 +10,23 @@ import org.projectfloodlight.openflow.protocol.OFVersion;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
+import org.projectfloodlight.openflow.protocol.oxm.OFOxm;
 import org.projectfloodlight.openflow.protocol.oxm.OFOxms;
 import org.projectfloodlight.openflow.types.EthType;
+import org.projectfloodlight.openflow.types.IPVersion;
 import org.projectfloodlight.openflow.types.IPv4Address;
+import org.projectfloodlight.openflow.types.IPv6Address;
 import org.projectfloodlight.openflow.types.IpProtocol;
 import org.projectfloodlight.openflow.types.OFBufferId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.google.common.collect.ImmutableList;
+
+import net.floodlightcontroller.tarn.FlowFactory;
+import net.floodlightcontroller.tarn.PacketFlow;
+import net.floodlightcontroller.tarn.Session;
+import net.floodlightcontroller.tarn.types.TransportPacketFlow;
 
 /**
  * The Flow Factory is intended to take all responsibility for creating
@@ -63,10 +68,17 @@ public class FlowFactoryImpl implements FlowFactory {
 
     private Match buildMatch(PacketFlow packetFlow) {
         Match.Builder builder = factory.buildMatch()
-                .setExact(MatchField.IN_PORT, packetFlow.getInPort())
-                .setExact(MatchField.ETH_TYPE, EthType.IPv4)
-                .setExact(MatchField.IPV4_SRC, (IPv4Address) packetFlow.getSrcIp())
-                .setExact(MatchField.IPV4_DST, (IPv4Address) packetFlow.getDstIp());
+                .setExact(MatchField.IN_PORT, packetFlow.getInPort());
+
+        if (packetFlow.getIpVersion().equals(IPVersion.IPv4)) {
+            builder.setExact(MatchField.ETH_TYPE, EthType.IPv4)
+                    .setExact(MatchField.IPV4_SRC, (IPv4Address) packetFlow.getSrcIp())
+                    .setExact(MatchField.IPV4_DST, (IPv4Address) packetFlow.getDstIp());
+        } else {
+            builder.setExact(MatchField.ETH_TYPE, EthType.IPv6)
+                    .setExact(MatchField.IPV6_SRC, (IPv6Address) packetFlow.getSrcIp())
+                    .setExact(MatchField.IPV6_DST, (IPv6Address) packetFlow.getDstIp());
+        }
 
         if (packetFlow instanceof TransportPacketFlow) {
             TransportPacketFlow transportPacketFlow = (TransportPacketFlow) packetFlow;
@@ -90,17 +102,23 @@ public class FlowFactoryImpl implements FlowFactory {
 
         /* Check if source needs to be rewritten */
         if (!packetFlow.getSrcIp().equals(oppositePacketFlow.getDstIp())) {
+            OFOxm srcOxm = packetFlow.getIpVersion() == IPVersion.IPv4
+                    ? oxms.ipv4Src((IPv4Address) oppositePacketFlow.getDstIp())
+                    : oxms.ipv6Src((IPv6Address) oppositePacketFlow.getDstIp());
             actions.add(factory.actions()
                     .buildSetField()
-                    .setField(oxms.ipv4Src((IPv4Address) oppositePacketFlow.getDstIp()))
+                    .setField(srcOxm)
                     .build());
         }
 
         /* Check if destination needs to be rewritten */
         if (!packetFlow.getDstIp().equals(oppositePacketFlow.getSrcIp())) {
+            OFOxm dstOxm = packetFlow.getIpVersion() == IPVersion.IPv4
+                    ? oxms.ipv4Dst((IPv4Address) oppositePacketFlow.getSrcIp())
+                    : oxms.ipv6Dst((IPv6Address) oppositePacketFlow.getSrcIp());
             actions.add(factory.actions()
                     .buildSetField()
-                    .setField(oxms.ipv4Dst((IPv4Address) oppositePacketFlow.getSrcIp()))
+                    .setField(dstOxm)
                     .build());
         }
 

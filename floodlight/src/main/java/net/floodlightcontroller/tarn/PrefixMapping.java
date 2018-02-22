@@ -3,11 +3,15 @@ package net.floodlightcontroller.tarn;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import net.floodlightcontroller.tarn.utils.IPUtils;
 import net.floodlightcontroller.tarn.web.PrefixMappingSerializer;
 import org.projectfloodlight.openflow.types.IPAddress;
 import org.projectfloodlight.openflow.types.IPAddressWithMask;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
+import org.projectfloodlight.openflow.types.IPv6Address;
+import org.projectfloodlight.openflow.types.IPv6AddressWithMask;
 
 /**
  * A mapping of an internal IP address with the current external prefix associated with it. These mappings will
@@ -29,8 +33,15 @@ public class PrefixMapping {
      */
     @JsonCreator
     PrefixMapping(@JsonProperty("internal-ip") String internalIp, @JsonProperty("external-prefix") String currentPrefix) {
-        this.internalIp = IPv4Address.of(internalIp);
-        this.currentPrefix = IPv4AddressWithMask.of(currentPrefix);
+        if (IPUtils.isIpv4Address(internalIp)) {
+            this.internalIp = IPv4Address.of(internalIp);
+            this.currentPrefix = IPv4AddressWithMask.of(currentPrefix);
+        } else if (IPUtils.isIpv6Address(internalIp)) {
+            this.internalIp = IPv6Address.of(internalIp);
+            this.currentPrefix = IPv6AddressWithMask.of(currentPrefix);
+        } else {
+            throw new IllegalArgumentException("Internal IP is not a valid IPv4 or IPv6 address.");
+        }
     }
 
     public IPAddress getInternalIp() {

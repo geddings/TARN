@@ -1,11 +1,12 @@
 package net.floodlightcontroller.tarn;
 
-import net.floodlightcontroller.packet.IPv4;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
+
+import net.floodlightcontroller.packet.IPv4;
 
 /**
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 11/3/17.

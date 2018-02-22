@@ -32,14 +32,14 @@ public class IPGenerator {
      * @param prefix the prefix in which the generated address will be contained
      * @return a random IP address within the given prefix
      */
-    public static IPv4Address getRandomAddressFrom(IPv4AddressWithMask prefix) {
+    private static IPv4Address getRandomAddressFrom(IPv4AddressWithMask prefix) {
         return IPv4Address.of(rng.nextInt())
                 .and(prefix.getMask().not())
                 .or(prefix.getValue());
     }
 
-    public static IPv6Address getRandomAddressFrom(IPv6AddressWithMask prefix) {
-        throw new NotImplementedException();
+    private static IPv6Address getRandomAddressFrom(IPv6AddressWithMask prefix) {
+        return IPv6Address.of(prefix, MacAddress.of(rng.nextInt()));
     }
 
 }

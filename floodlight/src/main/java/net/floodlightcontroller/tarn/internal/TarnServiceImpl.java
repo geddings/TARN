@@ -12,9 +12,11 @@ import net.floodlightcontroller.core.module.IFloodlightService;
 import net.floodlightcontroller.devicemanager.IDevice;
 import net.floodlightcontroller.devicemanager.IDeviceService;
 import net.floodlightcontroller.devicemanager.SwitchPort;
-import net.floodlightcontroller.packet.*;
+import net.floodlightcontroller.packet.Ethernet;
+import net.floodlightcontroller.packet.IPv4;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.tarn.*;
+import net.floodlightcontroller.tarn.types.TarnIPv4Session;
 import net.floodlightcontroller.tarn.web.TarnWebRoutable;
 import net.floodlightcontroller.util.OFMessageUtils;
 import org.projectfloodlight.openflow.protocol.OFMessage;
@@ -39,16 +41,14 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
     private IDeviceService deviceService;
 
     static final EventBus eventBus = new EventBus();
-    
+
     /* Configuration parameters */
     private boolean enabled = true;
 
-    private SessionFactory sessionFactory;
     private FlowFactory flowFactory;
-
     private PrefixMappingHandler mappingHandler;
 
-    private List<Session> sessions;
+    private List<TarnSession> tarnSessions;
 
     @Override
     public boolean isEnabled() {
@@ -83,8 +83,8 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
     }
 
     @Override
-    public Collection<Session> getSessions() {
-        return sessions;
+    public Collection<TarnSession> getSessions() {
+        return tarnSessions;
     }
 
     @Override
@@ -94,15 +94,15 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
         deviceService = context.getServiceImpl(IDeviceService.class);
         
         /* Create event listeners */
-        net.floodlightcontroller.tarn.EventListener eventListener = new net.floodlightcontroller.tarn.EventListener(this);
+        net.floodlightcontroller.tarn.EventListener eventListener = new net.floodlightcontroller.tarn.EventListener
+                (this);
 
         /* Register event listeners */
         eventBus.register(eventListener);
 
         mappingHandler = new PrefixMappingHandler();
-        sessionFactory = new SessionFactoryImpl(mappingHandler);
         flowFactory = new FlowFactoryImpl();
-        sessions = new ArrayList<>();
+        tarnSessions = new ArrayList<>();
     }
 
     @Override
@@ -133,7 +133,8 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
     }
 
     /**
-     * The receive function is used to respond to PacketIn messages and determine whether or not TARN should act on them.
+     * The receive function is used to respond to PacketIn messages and determine whether or not TARN should act on
+     * them.
      * <p>
      * TARN will only respond to TCP connections that involve at least one TARN device.
      *
@@ -149,7 +150,7 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
             log.trace("TARN Service not enabled. Continuing.");
             return Command.CONTINUE;
         }
-        
+
         if (msg.getType() == OFType.PACKET_IN) {
             OFPacketIn pi = (OFPacketIn) msg;
             OFPort inPort = OFMessageUtils.getInPort(pi);
@@ -158,15 +159,16 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
             if (eth.getEtherType() == EthType.IPv4) {
                 IPv4 ipv4 = (IPv4) eth.getPayload();
                 if (mappingHandler.isTarnDevice(ipv4)) {
+                    log.debug("IPv4 packet contains a TARN device. Attempting to create TARN session: {}", ipv4);
                     OFPort outPort = getOutPort(eth.getDestinationMACAddress(), sw.getId());
-                    Session session = sessionFactory.getSession(inPort, outPort, ipv4);
-                    if (session != null) {
-                        sessions.add(session);
-                        List<OFMessage> flows = flowFactory.buildFlows(session);
-                        sw.write(flows);
-                        sw.write(buildPacketOut(sw, pi));
-                        return Command.STOP;
-                    }
+                    TarnSession tarnSession = new TarnIPv4Session(ipv4, mappingHandler.getAssociatedMapping
+                            (ipv4.getSourceAddress()).orElse(null), mappingHandler.getAssociatedMapping
+                            (ipv4.getDestinationAddress()).orElse(null), inPort, outPort);
+                    log.info("TARN session created: {}", tarnSession);
+                    tarnSessions.add(tarnSession);
+                    sw.write(flowFactory.buildFlows((TarnIPv4Session) tarnSession));
+                    sw.write(buildPacketOut(sw, pi));
+                    return Command.STOP;
                 }
             } else if (eth.getEtherType() == EthType.IPv6) {
                 IPv6 ipv6 = (IPv6) eth.getPayload();

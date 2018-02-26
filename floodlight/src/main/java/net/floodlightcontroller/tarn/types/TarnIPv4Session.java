@@ -89,8 +89,8 @@ public class TarnIPv4Session implements TarnSession<IPv4Address> {
             } else {
                 externalSrcPort = tcp.getSourcePort();
                 internalSrcPort = tcp.getDestinationPort();
-                externalDstPort = tcp.getSourcePort();
-                internalDstPort = tcp.getDestinationPort();
+                externalDstPort = tcp.getDestinationPort();
+                internalDstPort = tcp.getSourcePort();
             }
         } else if (iPv4.getProtocol() == IpProtocol.UDP) {
             UDP udp = (UDP) iPv4.getPayload();
@@ -102,8 +102,8 @@ public class TarnIPv4Session implements TarnSession<IPv4Address> {
             } else {
                 externalSrcPort = udp.getSourcePort();
                 internalSrcPort = udp.getDestinationPort();
-                externalDstPort = udp.getSourcePort();
-                internalDstPort = udp.getDestinationPort();
+                externalDstPort = udp.getDestinationPort();
+                internalDstPort = udp.getSourcePort();
             }
         } else {
             externalSrcPort = internalSrcPort = externalDstPort = internalDstPort = TransportPort.NONE;

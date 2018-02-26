@@ -161,7 +161,7 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
             if (eth.getEtherType() == EthType.IPv4) {
                 IPv4 ipv4 = (IPv4) eth.getPayload();
                 if (mappingHandler.isTarnDevice(ipv4)) {
-                    log.debug("IPv4 packet contains a TARN device. Attempting to create TARN session: {}", ipv4);
+                    log.debug("IPv4 packet with source {} and destination {} contains a TARN device. Attempting to create TARN session.", ipv4.getSourceAddress(), ipv4.getDestinationAddress());
                     OFPort outPort = getOutPort(eth.getDestinationMACAddress(), sw.getId());
                     TarnSession tarnSession = new TarnIPv4Session(ipv4, mappingHandler.getAssociatedMapping
                             (ipv4.getSourceAddress()).orElse(null), mappingHandler.getAssociatedMapping
@@ -169,7 +169,9 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
                     log.info("TARN session created: {}", tarnSession);
                     tarnSessions.add(tarnSession);
                     sw.write(flowFactory.buildFlows((TarnIPv4Session) tarnSession));
-                    sw.write(buildPacketOut(sw, pi));
+                    OFPacketOut packetOut = buildPacketOut(sw, pi);
+                    log.debug("Writing packetout: {}", packetOut);
+                    sw.write(packetOut);
                     return Command.STOP;
                 }
             } else if (eth.getEtherType() == EthType.IPv6) {

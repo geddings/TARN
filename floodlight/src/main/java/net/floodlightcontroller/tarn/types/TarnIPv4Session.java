@@ -100,6 +100,7 @@ public class TarnIPv4Session implements TarnSession<IPv4Address> {
 
     /**
      * Returns the port which all external traffic is received on.
+     *
      * @return external port
      */
     @Override
@@ -111,6 +112,7 @@ public class TarnIPv4Session implements TarnSession<IPv4Address> {
 
     /**
      * Returns the port which all internal traffic is received on.
+     *
      * @return internal port
      */
     @Override

@@ -2,10 +2,7 @@ package net.floodlightcontroller.tarn.internal;
 
 import com.google.common.collect.ImmutableList;
 import net.floodlightcontroller.tarn.FlowFactory;
-import net.floodlightcontroller.tarn.PacketFlow;
-import net.floodlightcontroller.tarn.Session;
 import net.floodlightcontroller.tarn.types.TarnIPv4Session;
-import net.floodlightcontroller.tarn.types.TransportPacketFlow;
 import org.projectfloodlight.openflow.protocol.OFFactories;
 import org.projectfloodlight.openflow.protocol.OFFactory;
 import org.projectfloodlight.openflow.protocol.OFMessage;
@@ -38,26 +35,14 @@ public class FlowFactoryImpl implements FlowFactory {
     private final OFFactory factory = OFFactories.getFactory(OFVersion.OF_15);
 
     @Override
-    public List<OFMessage> buildFlows(Session session) {
-        /* Build inbound flow */
-//        OFMessage inboundFlow = buildFlow(buildMatch(session.getInbound()), buildActions(session.getInbound(),
-//                session.getOutbound()));
-//
-//        /* Build outbound flow */
-//        OFMessage outboundFlow = buildFlow(buildMatch(session.getOutbound()), buildActions(session.getOutbound(),
-//                session.getInbound()));
-
-//        return ImmutableList.of(inboundFlow, outboundFlow);
-        return null;
-    }
-
-    @Override
     public List<OFMessage> buildFlows(TarnIPv4Session session) {
         /* Build outgoing flow: internal -> external */
-        OFMessage outgoingFlow = buildFlow(buildOutgoingMatch(session), buildOutgoingActions(session), OUTGOING_FLOW_COOKIE);
+        OFMessage outgoingFlow = buildFlow(buildOutgoingMatch(session), buildOutgoingActions(session),
+                OUTGOING_FLOW_COOKIE);
 
         /* Build incoming flow: external -> internal */
-        OFMessage incomingFlow = buildFlow(buildIncomingMatch(session), buildIncomingActions(session), INCOMING_FLOW_COOKIE);
+        OFMessage incomingFlow = buildFlow(buildIncomingMatch(session), buildIncomingActions(session),
+                INCOMING_FLOW_COOKIE);
 
         return ImmutableList.of(outgoingFlow, incomingFlow);
     }
@@ -75,12 +60,14 @@ public class FlowFactoryImpl implements FlowFactory {
     }
 
     private Match buildIncomingMatch(TarnIPv4Session session) {
-        return buildIPv4Match(session.getExternalPort(), session.getExternalSrcIp(), session.getExternalDstIp(), session.getIpProtocol(),
+        return buildIPv4Match(session.getExternalPort(), session.getExternalSrcIp(), session.getExternalDstIp(),
+                session.getIpProtocol(),
                 session.getExternalSrcPort(), session.getExternalDstPort());
     }
 
     private Match buildOutgoingMatch(TarnIPv4Session session) {
-        return buildIPv4Match(session.getInternalPort(), session.getInternalSrcIp(), session.getInternalDstIp(), session.getIpProtocol(),
+        return buildIPv4Match(session.getInternalPort(), session.getInternalSrcIp(), session.getInternalDstIp(),
+                session.getIpProtocol(),
                 session.getInternalSrcPort(), session.getInternalDstPort());
     }
 
@@ -142,59 +129,6 @@ public class FlowFactoryImpl implements FlowFactory {
                 .buildOutput()
                 .setMaxLen(0xFFffFFff)
                 .setPort(outPort)
-                .build());
-
-        return actions;
-    }
-
-    private Match buildMatch(PacketFlow packetFlow) {
-        Match.Builder builder = factory.buildMatch()
-                .setExact(MatchField.IN_PORT, packetFlow.getInPort())
-                .setExact(MatchField.ETH_TYPE, EthType.IPv4)
-                .setExact(MatchField.IPV4_SRC, packetFlow.getSrcIp())
-                .setExact(MatchField.IPV4_DST, packetFlow.getDstIp());
-
-        if (packetFlow instanceof TransportPacketFlow) {
-            TransportPacketFlow transportPacketFlow = (TransportPacketFlow) packetFlow;
-            if (transportPacketFlow.getIpProtocol().equals(IpProtocol.TCP)) {
-                builder.setExact(MatchField.IP_PROTO, IpProtocol.TCP);
-                builder.setExact(MatchField.TCP_SRC, transportPacketFlow.getSrcPort());
-                builder.setExact(MatchField.TCP_DST, transportPacketFlow.getDstPort());
-            } else if (transportPacketFlow.getIpProtocol().equals(IpProtocol.UDP)) {
-                builder.setExact(MatchField.IP_PROTO, IpProtocol.UDP);
-                builder.setExact(MatchField.UDP_SRC, transportPacketFlow.getSrcPort());
-                builder.setExact(MatchField.UDP_DST, transportPacketFlow.getDstPort());
-            }
-        }
-
-        return builder.build();
-    }
-
-    private List<OFAction> buildActions(PacketFlow packetFlow, PacketFlow oppositePacketFlow) {
-        List<OFAction> actions = new ArrayList<>();
-        OFOxms oxms = factory.oxms();
-
-        /* Check if source needs to be rewritten */
-        if (!packetFlow.getSrcIp().equals(oppositePacketFlow.getDstIp())) {
-            actions.add(factory.actions()
-                    .buildSetField()
-                    .setField(oxms.ipv4Src(oppositePacketFlow.getDstIp()))
-                    .build());
-        }
-
-        /* Check if destination needs to be rewritten */
-        if (!packetFlow.getDstIp().equals(oppositePacketFlow.getSrcIp())) {
-            actions.add(factory.actions()
-                    .buildSetField()
-                    .setField(oxms.ipv4Dst(oppositePacketFlow.getSrcIp()))
-                    .build());
-        }
-
-        /* Set output port */
-        actions.add(factory.actions()
-                .buildOutput()
-                .setMaxLen(0xFFffFFff)
-                .setPort(packetFlow.getOutPort())
                 .build());
 
         return actions;

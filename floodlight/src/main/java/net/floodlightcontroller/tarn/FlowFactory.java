@@ -20,7 +20,5 @@ public interface FlowFactory {
      * @param session the session defines the matches and rewrite actions
      * @return a list of flows that can be inserted
      */
-    List<OFMessage> buildFlows(Session session);
-
     List<OFMessage> buildFlows(TarnIPv4Session session);
 }

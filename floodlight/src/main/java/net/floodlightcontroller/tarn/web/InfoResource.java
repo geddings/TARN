@@ -1,8 +1,8 @@
 package net.floodlightcontroller.tarn.web;
 
 import com.google.common.collect.ImmutableMap;
-import net.floodlightcontroller.tarn.Session;
 import net.floodlightcontroller.tarn.TarnService;
+import net.floodlightcontroller.tarn.TarnSession;
 import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
 import org.slf4j.Logger;
@@ -20,7 +20,7 @@ public class InfoResource extends ServerResource {
         TarnService tarnService = (TarnService) getContext().getAttributes().get(TarnService.class.getCanonicalName());
         ImmutableMap.Builder<String, Object> info = new ImmutableMap.Builder<>();
         int i = 0;
-        for (Session session : tarnService.getSessions()) {
+        for (TarnSession session : tarnService.getSessions()) {
             info.put("session-" + i, session);
             i++;
         }

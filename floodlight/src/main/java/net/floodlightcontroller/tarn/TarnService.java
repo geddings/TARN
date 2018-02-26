@@ -19,7 +19,7 @@ public interface TarnService extends IFloodlightService {
     
     void removePrefixMapping(IPv4Address internalIp);
 
-    Collection<Session> getSessions();
+    Collection<TarnSession> getSessions();
 
     boolean isEnabled();
     

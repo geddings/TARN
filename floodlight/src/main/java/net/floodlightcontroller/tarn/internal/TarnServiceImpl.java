@@ -45,12 +45,9 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
     /* Configuration parameters */
     private boolean enabled = true;
 
-    private SessionFactory sessionFactory;
     private FlowFactory flowFactory;
-
     private PrefixMappingHandler mappingHandler;
 
-    private List<Session> sessions;
     private List<TarnSession> tarnSessions;
 
     @Override
@@ -86,8 +83,8 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
     }
 
     @Override
-    public Collection<Session> getSessions() {
-        return sessions;
+    public Collection<TarnSession> getSessions() {
+        return tarnSessions;
     }
 
     @Override
@@ -104,9 +101,7 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
         eventBus.register(eventListener);
 
         mappingHandler = new PrefixMappingHandler();
-        sessionFactory = new SessionFactoryImpl(mappingHandler);
         flowFactory = new FlowFactoryImpl();
-        sessions = new ArrayList<>();
         tarnSessions = new ArrayList<>();
     }
 

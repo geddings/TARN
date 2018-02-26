@@ -50,19 +50,25 @@ def startNetwork():
     h2 = net.getNodeByName('h2')
 
     h1.setIP('10.0.0.1', prefixLen=24)
+    h1.cmd('ifconfig h1-eth0 inet6 add fc00:1111::1/64')
     h2.setIP('50.0.0.1', prefixLen=24)
+    h2.cmd('ifconfig h2-eth0 inet6 add fc00:5555::1/64')
 
     time.sleep(10)
 
     # REST API to configure AS1 controller
     c1.addMapping("50.0.0.1", "80.0.0.0/16")
+    c1.addMapping("fc00:5555:0:0:0:0:0:1", "fc00:8888::/64")
 
     # REST API to configure AS2 controller
     c2.addMapping("50.0.0.1", "80.0.0.0/16")
+    c2.addMapping("fc00:5555:0:0:0:0:0:1", "fc00:8888::/64")
 
     # End-to-end communication setup as below
     h1.cmd('route add -net 50.0.0.0 netmask 255.255.255.0 dev h1-eth0')
+    h1.cmd('route -A inet6 add fc00:5555::/64 dev h1-eth0')
     h2.cmd('route add -net 10.0.0.0 netmask 255.255.255.0 dev h2-eth0')
+    h2.cmd('route -A inet6 add fc00:1111::/64 dev h1-eth0')
 
 
 def stopNetwork():

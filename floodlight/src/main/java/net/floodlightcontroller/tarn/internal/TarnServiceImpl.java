@@ -14,9 +14,11 @@ import net.floodlightcontroller.devicemanager.IDeviceService;
 import net.floodlightcontroller.devicemanager.SwitchPort;
 import net.floodlightcontroller.packet.Ethernet;
 import net.floodlightcontroller.packet.IPv4;
+import net.floodlightcontroller.packet.IPv6;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.tarn.*;
 import net.floodlightcontroller.tarn.types.TarnIPv4Session;
+import net.floodlightcontroller.tarn.types.TarnIPv6Session;
 import net.floodlightcontroller.tarn.web.TarnWebRoutable;
 import net.floodlightcontroller.util.OFMessageUtils;
 import org.projectfloodlight.openflow.protocol.OFMessage;
@@ -174,14 +176,14 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
                 IPv6 ipv6 = (IPv6) eth.getPayload();
                 if (mappingHandler.isTarnDevice(ipv6)) {
                     OFPort outPort = getOutPort(eth.getDestinationMACAddress(), sw.getId());
-                    Session session = sessionFactory.getSession(inPort, outPort, ipv6);
-                    if (session != null) {
-                        sessions.add(session);
-                        List<OFMessage> flows = flowFactory.buildFlows(session);
-                        sw.write(flows);
-                        sw.write(buildPacketOut(sw, pi));
-                        return Command.STOP;
-                    }
+                    TarnSession tarnSession = new TarnIPv6Session(ipv6, mappingHandler.getAssociatedMapping
+                            (ipv6.getSourceAddress()).orElse(null), mappingHandler.getAssociatedMapping
+                            (ipv6.getDestinationAddress()).orElse(null), inPort, outPort);
+                    log.info("TARN session created: {}", tarnSession);
+                    tarnSessions.add(tarnSession);
+                    sw.write(flowFactory.buildFlows((TarnIPv6Session) tarnSession));
+                    sw.write(buildPacketOut(sw, pi));
+                    return Command.STOP;
                 }
             }
 

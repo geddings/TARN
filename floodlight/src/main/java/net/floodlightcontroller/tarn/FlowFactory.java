@@ -1,6 +1,7 @@
 package net.floodlightcontroller.tarn;
 
 import net.floodlightcontroller.tarn.types.TarnIPv4Session;
+import net.floodlightcontroller.tarn.types.TarnIPv6Session;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.types.U64;
 
@@ -21,4 +22,7 @@ public interface FlowFactory {
      * @return a list of flows that can be inserted
      */
     List<OFMessage> buildFlows(TarnIPv4Session session);
+
+    List<OFMessage> buildFlows(TarnIPv6Session session);
+
 }

@@ -1,12 +1,12 @@
 package net.floodlightcontroller.tarn.types;
 
-import net.floodlightcontroller.packet.IPv4;
+import net.floodlightcontroller.packet.IPv6;
 import net.floodlightcontroller.packet.TCP;
 import net.floodlightcontroller.packet.UDP;
 import net.floodlightcontroller.tarn.PrefixMapping;
 import net.floodlightcontroller.tarn.TarnSession;
 import net.floodlightcontroller.tarn.utils.IPUtils;
-import org.projectfloodlight.openflow.types.IPv4Address;
+import org.projectfloodlight.openflow.types.IPv6Address;
 import org.projectfloodlight.openflow.types.IpProtocol;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.projectfloodlight.openflow.types.TransportPort;
@@ -14,68 +14,68 @@ import org.projectfloodlight.openflow.types.TransportPort;
 /**
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 2/26/18.
  */
-public class TarnIPv4Session implements TarnSession<IPv4Address> {
+public class TarnIPv6Session implements TarnSession<IPv6Address> {
 
     private Direction direction;
     private final OFPort inPort;
     private final OFPort outPort;
     private final IpProtocol ipProtocol;
-    private final IPv4Address externalSrcIp;
-    private final IPv4Address externalDstIp;
-    private final IPv4Address internalSrcIp;
-    private final IPv4Address internalDstIp;
+    private final IPv6Address externalSrcIp;
+    private final IPv6Address externalDstIp;
+    private final IPv6Address internalSrcIp;
+    private final IPv6Address internalDstIp;
     private final TransportPort externalSrcPort;
     private final TransportPort internalSrcPort;
     private final TransportPort externalDstPort;
     private final TransportPort internalDstPort;
 
-    public TarnIPv4Session(IPv4 iPv4, PrefixMapping srcMapping, PrefixMapping dstMapping, OFPort inPort, OFPort
+    public TarnIPv6Session(IPv6 iPv6, PrefixMapping srcMapping, PrefixMapping dstMapping, OFPort inPort, OFPort
             outPort) {
         this.inPort = inPort;
         this.outPort = outPort;
 
         if (srcMapping != null) {
-            // This means that the IPv4 packet is an egress packet and contains internal addresses
-            if (srcMapping.isInternalIp(iPv4.getSourceAddress())) {
+            // This means that the IPv6 packet is an egress packet and contains internal addresses
+            if (srcMapping.isInternalIp(iPv6.getSourceAddress())) {
                 direction = Direction.OUTGOING;
-                internalSrcIp = iPv4.getSourceAddress();
-                externalSrcIp = (IPv4Address) IPUtils.getRandomAddressFrom(srcMapping.getCurrentPrefix());
+                internalSrcIp = iPv6.getSourceAddress();
+                externalSrcIp = (IPv6Address) IPUtils.getRandomAddressFrom(srcMapping.getCurrentPrefix());
             } else {
                 direction = Direction.INCOMING;
-                externalSrcIp = iPv4.getSourceAddress();
-                internalSrcIp = (IPv4Address) srcMapping.getInternalIp();
+                externalSrcIp = iPv6.getSourceAddress();
+                internalSrcIp = (IPv6Address) srcMapping.getInternalIp();
             }
         } else {
-            externalSrcIp = iPv4.getSourceAddress();
-            internalSrcIp = iPv4.getSourceAddress();
+            externalSrcIp = iPv6.getSourceAddress();
+            internalSrcIp = iPv6.getSourceAddress();
         }
 
         if (dstMapping != null) {
-            if (dstMapping.isInternalIp(iPv4.getDestinationAddress())) {
+            if (dstMapping.isInternalIp(iPv6.getDestinationAddress())) {
                 // Traffic coming in is internal traffic: internal -> external
                 direction = Direction.OUTGOING;
-                internalDstIp = iPv4.getDestinationAddress();
-                externalDstIp = (IPv4Address) IPUtils.getRandomAddressFrom(dstMapping.getCurrentPrefix());
+                internalDstIp = iPv6.getDestinationAddress();
+                externalDstIp = (IPv6Address) IPUtils.getRandomAddressFrom(dstMapping.getCurrentPrefix());
             } else {
                 // Traffic coming in is external traffic: external -> internal
                 direction = Direction.INCOMING;
-                externalDstIp = iPv4.getDestinationAddress();
-                internalDstIp = (IPv4Address) dstMapping.getInternalIp();
+                externalDstIp = iPv6.getDestinationAddress();
+                internalDstIp = (IPv6Address) dstMapping.getInternalIp();
             }
         } else {
-            externalDstIp = iPv4.getDestinationAddress();
-            internalDstIp = iPv4.getDestinationAddress();
+            externalDstIp = iPv6.getDestinationAddress();
+            internalDstIp = iPv6.getDestinationAddress();
         }
 
-        ipProtocol = iPv4.getProtocol();
-        if (iPv4.getProtocol() == IpProtocol.TCP) {
-            TCP tcp = (TCP) iPv4.getPayload();
+        ipProtocol = iPv6.getNextHeader();
+        if (ipProtocol == IpProtocol.TCP) {
+            TCP tcp = (TCP) iPv6.getPayload();
             externalSrcPort = tcp.getSourcePort();
             internalSrcPort = tcp.getSourcePort();
             externalDstPort = tcp.getDestinationPort();
             internalDstPort = tcp.getDestinationPort();
-        } else if (iPv4.getProtocol() == IpProtocol.UDP) {
-            UDP udp = (UDP) iPv4.getPayload();
+        } else if (ipProtocol == IpProtocol.UDP) {
+            UDP udp = (UDP) iPv6.getPayload();
             externalSrcPort = udp.getSourcePort();
             internalSrcPort = udp.getSourcePort();
             externalDstPort = udp.getDestinationPort();
@@ -130,12 +130,12 @@ public class TarnIPv4Session implements TarnSession<IPv4Address> {
     }
 
     @Override
-    public IPv4Address getExternalSrcIp() {
+    public IPv6Address getExternalSrcIp() {
         return externalSrcIp;
     }
 
     @Override
-    public IPv4Address getExternalDstIp() {
+    public IPv6Address getExternalDstIp() {
         return externalDstIp;
     }
 
@@ -150,12 +150,12 @@ public class TarnIPv4Session implements TarnSession<IPv4Address> {
     }
 
     @Override
-    public IPv4Address getInternalSrcIp() {
+    public IPv6Address getInternalSrcIp() {
         return internalSrcIp;
     }
 
     @Override
-    public IPv4Address getInternalDstIp() {
+    public IPv6Address getInternalDstIp() {
         return internalDstIp;
     }
 
@@ -179,7 +179,7 @@ public class TarnIPv4Session implements TarnSession<IPv4Address> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        TarnIPv4Session session = (TarnIPv4Session) o;
+        TarnIPv6Session session = (TarnIPv6Session) o;
 
         if (direction != session.direction) return false;
         if (inPort != null ? !inPort.equals(session.inPort) : session.inPort != null) return false;
@@ -226,7 +226,7 @@ public class TarnIPv4Session implements TarnSession<IPv4Address> {
 
     @Override
     public String toString() {
-        return "TarnIPv4Session{" +
+        return "TarnIPv6Session{" +
                 "direction=" + direction +
                 ", inPort=" + inPort +
                 ", outPort=" + outPort +

@@ -52,12 +52,12 @@ public class PrefixMapping {
         return currentPrefix;
     }
 
-    public boolean isInternalIp(IPv4Address iPv4Address) {
-        return internalIp.equals(iPv4Address);
+    public boolean isInternalIp(IPAddress ipAddress) {
+        return internalIp.equals(ipAddress);
     }
 
-    public boolean isExternalIp(IPv4Address iPv4Address) {
-        return currentPrefix.contains(iPv4Address);
+    public boolean isExternalIp(IPAddress ipAddress) {
+        return currentPrefix.contains(ipAddress);
     }
 
     @Override

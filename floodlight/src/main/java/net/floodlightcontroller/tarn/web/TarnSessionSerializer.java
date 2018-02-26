@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import net.floodlightcontroller.tarn.TarnSession;
+import org.projectfloodlight.openflow.types.IpProtocol;
 
 import java.io.IOException;
 
@@ -16,13 +17,27 @@ public class TarnSessionSerializer extends JsonSerializer<TarnSession> {
     public void serialize(TarnSession session, JsonGenerator jgen, SerializerProvider provider) throws IOException {
         jgen.writeStartObject();
         jgen.writeStringField("direction", session.getDirection().name());
-        jgen.writeStringField("ip-protocol", session.getIpProtocol().toString());
+
+        String protocolName = "";
+        if (session.getIpProtocol() == IpProtocol.TCP) protocolName = "TCP";
+        else if (session.getIpProtocol() == IpProtocol.UDP) protocolName = "UDP";
+        else if (session.getIpProtocol() == IpProtocol.ICMP) protocolName = "ICMP";
+        jgen.writeStringField("ip-protocol", protocolName);
+
         jgen.writeStringField("in-port", session.getInPort().toString());
         jgen.writeStringField("out-port", session.getOutPort().toString());
         jgen.writeStringField("internal-src-ip", session.getInternalSrcIp().toString());
         jgen.writeStringField("internal-dst-ip", session.getInternalDstIp().toString());
         jgen.writeStringField("external-src-ip", session.getExternalSrcIp().toString());
         jgen.writeStringField("external-dst-ip", session.getExternalDstIp().toString());
+
+        if (session.hasTransportPorts()) {
+            jgen.writeStringField("internal-src-port", session.getInternalSrcPort().toString());
+            jgen.writeStringField("internal-dst-port", session.getInternalDstPort().toString());
+            jgen.writeStringField("external-src-port", session.getExternalSrcPort().toString());
+            jgen.writeStringField("external-dst-port", session.getExternalDstPort().toString());
+        }
+
         jgen.writeEndObject();
     }
 }

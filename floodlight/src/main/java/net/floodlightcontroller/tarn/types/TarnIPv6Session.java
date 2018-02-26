@@ -1,11 +1,13 @@
 package net.floodlightcontroller.tarn.types;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import net.floodlightcontroller.packet.IPv6;
 import net.floodlightcontroller.packet.TCP;
 import net.floodlightcontroller.packet.UDP;
 import net.floodlightcontroller.tarn.PrefixMapping;
 import net.floodlightcontroller.tarn.TarnSession;
 import net.floodlightcontroller.tarn.utils.IPUtils;
+import net.floodlightcontroller.tarn.web.TarnSessionSerializer;
 import org.projectfloodlight.openflow.types.IPv6Address;
 import org.projectfloodlight.openflow.types.IpProtocol;
 import org.projectfloodlight.openflow.types.OFPort;
@@ -14,6 +16,7 @@ import org.projectfloodlight.openflow.types.TransportPort;
 /**
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 2/26/18.
  */
+@JsonSerialize(using = TarnSessionSerializer.class)
 public class TarnIPv6Session implements TarnSession<IPv6Address> {
 
     private Direction direction;

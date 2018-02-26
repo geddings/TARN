@@ -15,6 +15,7 @@ import net.floodlightcontroller.devicemanager.SwitchPort;
 import net.floodlightcontroller.packet.*;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.tarn.*;
+import net.floodlightcontroller.tarn.types.TarnIPv4Session;
 import net.floodlightcontroller.tarn.web.TarnWebRoutable;
 import net.floodlightcontroller.util.OFMessageUtils;
 import org.projectfloodlight.openflow.protocol.OFMessage;
@@ -49,6 +50,7 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
     private PrefixMappingHandler mappingHandler;
 
     private List<Session> sessions;
+    private List<TarnSession> tarnSessions;
 
     @Override
     public boolean isEnabled() {
@@ -159,14 +161,21 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
                 IPv4 ipv4 = (IPv4) eth.getPayload();
                 if (mappingHandler.isTarnDevice(ipv4)) {
                     OFPort outPort = getOutPort(eth.getDestinationMACAddress(), sw.getId());
-                    Session session = sessionFactory.getSession(inPort, outPort, ipv4);
-                    if (session != null) {
-                        sessions.add(session);
-                        List<OFMessage> flows = flowFactory.buildFlows(session);
-                        sw.write(flows);
-                        sw.write(buildPacketOut(sw, pi));
-                        return Command.STOP;
-                    }
+//                    Session session = sessionFactory.getSession(inPort, outPort, ipv4);
+                    TarnSession tarnSession = new TarnIPv4Session(ipv4, mappingHandler.getAssociatedMapping
+                            (ipv4.getSourceAddress()).get(), mappingHandler.getAssociatedMapping
+                            (ipv4.getDestinationAddress()).get(), inPort, outPort);
+                    tarnSessions.add(tarnSession);
+                    sw.write(flowFactory.buildFlows((TarnIPv4Session) tarnSession));
+                    sw.write(buildPacketOut(sw, pi));
+                    return Command.STOP;
+//                    if (session != null) {
+//                        sessions.add(session);
+//                        List<OFMessage> flows = flowFactory.buildFlows(session);
+//                        sw.write(flows);
+//                        sw.write(buildPacketOut(sw, pi));
+//                        return Command.STOP;
+//                    }
                 }
 
             }

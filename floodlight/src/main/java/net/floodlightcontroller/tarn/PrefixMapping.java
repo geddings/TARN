@@ -39,6 +39,14 @@ public class PrefixMapping {
         return currentPrefix;
     }
 
+    public boolean isInternalIp(IPv4Address iPv4Address) {
+        return internalIp.equals(iPv4Address);
+    }
+
+    public boolean isExternalIp(IPv4Address iPv4Address) {
+        return currentPrefix.contains(iPv4Address);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

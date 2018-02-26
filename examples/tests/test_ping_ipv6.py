@@ -1,15 +1,13 @@
 #!/usr/bin/python
-import json
 import os
-import time
-from os import makedirs
-from os import path
 
+import pytest as pytest
 from mininet.cli import CLI
 from mininet.log import info
 from mininet.net import Mininet
-
 from nodes import Floodlight
+from os import makedirs
+from os import path
 from topologies.lineartopo import LinearTopo
 
 HOME_FOLDER = os.getenv('HOME')
@@ -41,7 +39,7 @@ def stopNetwork():
         info('** Tearing down network\n')
         net.stop()
 
-
+@pytest.mark.skip(reason="This test is still under construction.")
 def test_ping():
     startNetwork()
 

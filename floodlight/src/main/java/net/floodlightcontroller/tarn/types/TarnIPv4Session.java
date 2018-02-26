@@ -1,11 +1,13 @@
 package net.floodlightcontroller.tarn.types;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import net.floodlightcontroller.packet.IPv4;
 import net.floodlightcontroller.packet.TCP;
 import net.floodlightcontroller.packet.UDP;
 import net.floodlightcontroller.tarn.PrefixMapping;
 import net.floodlightcontroller.tarn.TarnSession;
 import net.floodlightcontroller.tarn.utils.IPUtils;
+import net.floodlightcontroller.tarn.web.TarnSessionSerializer;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.IpProtocol;
 import org.projectfloodlight.openflow.types.OFPort;
@@ -14,16 +16,17 @@ import org.projectfloodlight.openflow.types.TransportPort;
 /**
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 2/26/18.
  */
+@JsonSerialize(using = TarnSessionSerializer.class)
 public class TarnIPv4Session implements TarnSession<IPv4Address> {
 
     private Direction direction;
     private final OFPort inPort;
     private final OFPort outPort;
     private final IpProtocol ipProtocol;
-    private final IPv4Address externalSrcIp;
-    private final IPv4Address externalDstIp;
-    private final IPv4Address internalSrcIp;
-    private final IPv4Address internalDstIp;
+    private IPv4Address externalSrcIp;
+    private IPv4Address externalDstIp;
+    private IPv4Address internalSrcIp;
+    private IPv4Address internalDstIp;
     private final TransportPort externalSrcPort;
     private final TransportPort internalSrcPort;
     private final TransportPort externalDstPort;
@@ -39,15 +42,12 @@ public class TarnIPv4Session implements TarnSession<IPv4Address> {
             if (srcMapping.isInternalIp(iPv4.getSourceAddress())) {
                 direction = Direction.OUTGOING;
                 internalSrcIp = iPv4.getSourceAddress();
-                externalSrcIp = (IPv4Address) IPUtils.getRandomAddressFrom(srcMapping.getCurrentPrefix());
+                externalDstIp = (IPv4Address) IPUtils.getRandomAddressFrom(srcMapping.getCurrentPrefix());
             } else {
                 direction = Direction.INCOMING;
                 externalSrcIp = iPv4.getSourceAddress();
-                internalSrcIp = (IPv4Address) srcMapping.getInternalIp();
+                internalDstIp = (IPv4Address) srcMapping.getInternalIp();
             }
-        } else {
-            externalSrcIp = iPv4.getSourceAddress();
-            internalSrcIp = iPv4.getSourceAddress();
         }
 
         if (dstMapping != null) {
@@ -55,31 +55,56 @@ public class TarnIPv4Session implements TarnSession<IPv4Address> {
                 // Traffic coming in is internal traffic: internal -> external
                 direction = Direction.OUTGOING;
                 internalDstIp = iPv4.getDestinationAddress();
-                externalDstIp = (IPv4Address) IPUtils.getRandomAddressFrom(dstMapping.getCurrentPrefix());
+                externalSrcIp = (IPv4Address) IPUtils.getRandomAddressFrom(dstMapping.getCurrentPrefix());
             } else {
                 // Traffic coming in is external traffic: external -> internal
                 direction = Direction.INCOMING;
                 externalDstIp = iPv4.getDestinationAddress();
-                internalDstIp = (IPv4Address) dstMapping.getInternalIp();
+                internalSrcIp = (IPv4Address) dstMapping.getInternalIp();
             }
-        } else {
-            externalDstIp = iPv4.getDestinationAddress();
-            internalDstIp = iPv4.getDestinationAddress();
+        }
+
+        if (internalSrcIp == null && externalDstIp == null) {
+            if (direction == Direction.OUTGOING) {
+                internalSrcIp = externalDstIp = iPv4.getSourceAddress();
+            } else {
+                internalSrcIp = externalDstIp = iPv4.getDestinationAddress();
+            }
+        } else if (internalDstIp == null && externalSrcIp == null) {
+            if (direction == Direction.OUTGOING) {
+                internalDstIp = externalSrcIp = iPv4.getDestinationAddress();
+            } else {
+                internalDstIp = externalSrcIp = iPv4.getSourceAddress();
+            }
         }
 
         ipProtocol = iPv4.getProtocol();
         if (iPv4.getProtocol() == IpProtocol.TCP) {
             TCP tcp = (TCP) iPv4.getPayload();
-            externalSrcPort = tcp.getSourcePort();
-            internalSrcPort = tcp.getSourcePort();
-            externalDstPort = tcp.getDestinationPort();
-            internalDstPort = tcp.getDestinationPort();
+            if (direction == Direction.OUTGOING) {
+                externalSrcPort = tcp.getDestinationPort();
+                internalSrcPort = tcp.getSourcePort();
+                externalDstPort = tcp.getSourcePort();
+                internalDstPort = tcp.getDestinationPort();
+            } else {
+                externalSrcPort = tcp.getSourcePort();
+                internalSrcPort = tcp.getDestinationPort();
+                externalDstPort = tcp.getSourcePort();
+                internalDstPort = tcp.getDestinationPort();
+            }
         } else if (iPv4.getProtocol() == IpProtocol.UDP) {
             UDP udp = (UDP) iPv4.getPayload();
-            externalSrcPort = udp.getSourcePort();
-            internalSrcPort = udp.getSourcePort();
-            externalDstPort = udp.getDestinationPort();
-            internalDstPort = udp.getDestinationPort();
+            if (direction == Direction.OUTGOING) {
+                externalSrcPort = udp.getDestinationPort();
+                internalSrcPort = udp.getSourcePort();
+                externalDstPort = udp.getSourcePort();
+                internalDstPort = udp.getDestinationPort();
+            } else {
+                externalSrcPort = udp.getSourcePort();
+                internalSrcPort = udp.getDestinationPort();
+                externalDstPort = udp.getSourcePort();
+                internalDstPort = udp.getDestinationPort();
+            }
         } else {
             externalSrcPort = internalSrcPort = externalDstPort = internalDstPort = TransportPort.NONE;
         }

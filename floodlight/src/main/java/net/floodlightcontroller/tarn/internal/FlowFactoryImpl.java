@@ -167,18 +167,18 @@ public class FlowFactoryImpl implements FlowFactory {
         OFOxms oxms = factory.oxms();
 
         /* Check if source needs to be rewritten */
-        if (!srcBefore.equals(srcAfter)) {
+        if (!srcBefore.equals(dstAfter)) {
             actions.add(factory.actions()
                     .buildSetField()
-                    .setField(oxms.ipv4Src(srcAfter))
+                    .setField(oxms.ipv4Src(dstAfter))
                     .build());
         }
 
         /* Check if destination needs to be rewritten */
-        if (!dstBefore.equals(dstAfter)) {
+        if (!dstBefore.equals(srcAfter)) {
             actions.add(factory.actions()
                     .buildSetField()
-                    .setField(oxms.ipv4Dst(dstAfter))
+                    .setField(oxms.ipv4Dst(srcAfter))
                     .build());
         }
 

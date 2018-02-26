@@ -40,29 +40,31 @@ public class FlowFactoryImpl implements FlowFactory {
     @Override
     public List<OFMessage> buildFlows(Session session) {
         /* Build inbound flow */
-        OFMessage inboundFlow = buildFlow(buildMatch(session.getInbound()), buildActions(session.getInbound(),
-                session.getOutbound()));
+//        OFMessage inboundFlow = buildFlow(buildMatch(session.getInbound()), buildActions(session.getInbound(),
+//                session.getOutbound()));
+//
+//        /* Build outbound flow */
+//        OFMessage outboundFlow = buildFlow(buildMatch(session.getOutbound()), buildActions(session.getOutbound(),
+//                session.getInbound()));
 
-        /* Build outbound flow */
-        OFMessage outboundFlow = buildFlow(buildMatch(session.getOutbound()), buildActions(session.getOutbound(),
-                session.getInbound()));
-
-        return ImmutableList.of(inboundFlow, outboundFlow);
+//        return ImmutableList.of(inboundFlow, outboundFlow);
+        return null;
     }
 
     @Override
     public List<OFMessage> buildFlows(TarnIPv4Session session) {
-        /* Build inbound flow */
-        OFMessage inboundFlow = buildFlow(buildIngressMatch(session), buildIngressActions(session));
+        /* Build outgoing flow: internal -> external */
+        OFMessage outgoingFlow = buildFlow(buildOutgoingMatch(session), buildOutgoingActions(session), OUTGOING_FLOW_COOKIE);
 
-        /* Build outbound flow */
-        OFMessage outboundFlow = buildFlow(buildEgressMatch(session), buildEgressActions(session));
+        /* Build incoming flow: external -> internal */
+        OFMessage incomingFlow = buildFlow(buildIncomingMatch(session), buildIncomingActions(session), INCOMING_FLOW_COOKIE);
 
-        return ImmutableList.of(inboundFlow, outboundFlow);
+        return ImmutableList.of(outgoingFlow, incomingFlow);
     }
 
-    private OFMessage buildFlow(Match match, List<OFAction> actions) {
+    private OFMessage buildFlow(Match match, List<OFAction> actions, U64 cookie) {
         return factory.buildFlowAdd()
+                .setCookie(cookie)
                 .setBufferId(OFBufferId.NO_BUFFER)
                 .setHardTimeout(0)
                 .setIdleTimeout(5)
@@ -72,14 +74,14 @@ public class FlowFactoryImpl implements FlowFactory {
                 .build();
     }
 
-    private Match buildIngressMatch(TarnIPv4Session session) {
-        return buildIPv4Match(session.getIngressPort(), session.getIngressSrcIp(), session.getIngressDstIp(), session.getIpProtocol(),
-                session.getIngressSrcPort(), session.getIngressDstPort());
+    private Match buildIncomingMatch(TarnIPv4Session session) {
+        return buildIPv4Match(session.getExternalPort(), session.getExternalSrcIp(), session.getExternalDstIp(), session.getIpProtocol(),
+                session.getExternalSrcPort(), session.getExternalDstPort());
     }
 
-    private Match buildEgressMatch(TarnIPv4Session session) {
-        return buildIPv4Match(session.getEgressPort(), session.getEgressSrcIp(), session.getEgressDstIp(), session.getIpProtocol(),
-                session.getEgressSrcPort(), session.getEgressDstPort());
+    private Match buildOutgoingMatch(TarnIPv4Session session) {
+        return buildIPv4Match(session.getInternalPort(), session.getInternalSrcIp(), session.getInternalDstIp(), session.getIpProtocol(),
+                session.getInternalSrcPort(), session.getInternalDstPort());
     }
 
     private Match buildIPv4Match(OFPort inPort, IPv4Address srcIp, IPv4Address dstIp, IpProtocol ipProtocol,
@@ -104,14 +106,14 @@ public class FlowFactoryImpl implements FlowFactory {
         return builder.build();
     }
 
-    private List<OFAction> buildIngressActions(TarnIPv4Session session) {
-        return buildIPv4Actions(session.getIngressSrcIp(), session.getIngressDstIp(), session.getEgressSrcIp(),
-                session.getEgressDstIp(), session.getEgressPort());
+    public List<OFAction> buildIncomingActions(TarnIPv4Session session) {
+        return buildIPv4Actions(session.getExternalSrcIp(), session.getExternalDstIp(), session.getInternalSrcIp(),
+                session.getInternalDstIp(), session.getInternalPort());
     }
 
-    private List<OFAction> buildEgressActions(TarnIPv4Session session) {
-        return buildIPv4Actions(session.getEgressSrcIp(), session.getEgressDstIp(), session.getIngressSrcIp(),
-                session.getIngressDstIp(), session.getIngressPort());
+    public List<OFAction> buildOutgoingActions(TarnIPv4Session session) {
+        return buildIPv4Actions(session.getInternalSrcIp(), session.getInternalDstIp(), session.getExternalSrcIp(),
+                session.getExternalDstIp(), session.getExternalPort());
     }
 
     private List<OFAction> buildIPv4Actions(IPv4Address srcBefore, IPv4Address dstBefore, IPv4Address srcAfter,
@@ -120,18 +122,18 @@ public class FlowFactoryImpl implements FlowFactory {
         OFOxms oxms = factory.oxms();
 
         /* Check if source needs to be rewritten */
-        if (!srcBefore.equals(dstAfter)) {
+        if (!srcBefore.equals(srcAfter)) {
             actions.add(factory.actions()
                     .buildSetField()
-                    .setField(oxms.ipv4Src(dstAfter))
+                    .setField(oxms.ipv4Src(srcAfter))
                     .build());
         }
 
         /* Check if destination needs to be rewritten */
-        if (!dstBefore.equals(srcAfter)) {
+        if (!dstBefore.equals(dstAfter)) {
             actions.add(factory.actions()
                     .buildSetField()
-                    .setField(oxms.ipv4Dst(srcAfter))
+                    .setField(oxms.ipv4Dst(dstAfter))
                     .build());
         }
 

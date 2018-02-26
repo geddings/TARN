@@ -10,6 +10,10 @@ import org.projectfloodlight.openflow.types.TransportPort;
  */
 public interface TarnSession<T extends IPAddress> {
 
+    /**
+     * INCOMING: Traffic coming in from the Internet (i.e. external -> internal)
+     * OUTGOING: Traffic is going out to the Internet (i.e. internal -> external)
+     */
     enum Direction {
         INCOMING, OUTGOING
     }
@@ -20,27 +24,27 @@ public interface TarnSession<T extends IPAddress> {
 
     OFPort getOutPort();
 
-    OFPort getIngressPort();
+    OFPort getExternalPort();
 
-    OFPort getEgressPort();
+    OFPort getInternalPort();
 
     IpProtocol getIpProtocol();
 
-    T getIngressSrcIp();
+    T getExternalSrcIp();
 
-    T getIngressDstIp();
+    T getExternalDstIp();
 
-    TransportPort getIngressSrcPort();
+    TransportPort getExternalSrcPort();
 
-    TransportPort getIngressDstPort();
+    TransportPort getExternalDstPort();
 
-    T getEgressSrcIp();
+    T getInternalSrcIp();
 
-    T getEgressDstIp();
+    T getInternalDstIp();
 
-    TransportPort getEgressSrcPort();
+    TransportPort getInternalSrcPort();
 
-    TransportPort getEgressDstPort();
+    TransportPort getInternalDstPort();
 
     boolean hasTransportPorts();
 }

@@ -1,4 +1,24 @@
 #!/usr/bin/python
+
+"""
+A simple one-way randomization example using TARN.
+
+This example uses a simple linear topology:
+     c1   c2
+      |    |
+h1---s1---s2---h2
+
+Each host is capable of both IPv4 and IPv6 communication. Consequently, each TARN controller has been configured
+to randomize the IP addresses of h2, both IPv4 and IPv6, to some preconfigured external prefix.
+
+Example usage:
+mininet> h1 ping h2
+
+mininet> h1 ping6 -I h1-eth0 fc00:5555::1
+
+author: Geddings Barrineau (cbarrin@g.clemson.edu)
+"""
+
 import os
 import time
 from os import makedirs

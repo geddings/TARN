@@ -25,6 +25,7 @@ public class TarnSessionSerializer extends JsonSerializer<TarnSession> {
         if (session.getIpProtocol() == IpProtocol.TCP) protocolName = "TCP";
         else if (session.getIpProtocol() == IpProtocol.UDP) protocolName = "UDP";
         else if (session.getIpProtocol() == IpProtocol.ICMP) protocolName = "ICMP";
+        else if (session.getIpProtocol() == IpProtocol.IPv6_ICMP) protocolName = "ICMP6";
         jgen.writeStringField("ip-protocol", protocolName);
 
         jgen.writeStringField("in-port", session.getInPort().toString());

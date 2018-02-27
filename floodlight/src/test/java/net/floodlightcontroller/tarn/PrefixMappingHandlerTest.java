@@ -27,9 +27,12 @@ public class PrefixMappingHandlerTest {
     }
 
     @Test
-    public void getMapping() throws Exception {
+    public void getMapping() {
         IPAddress address = IPUtils.getRandomAddressFrom(IPv6AddressWithMask.of("2001:db8:1234::/48"));
-        System.out.println(address);
+
+        Assert.assertTrue(IPUtils.isIpv6Address("fe80::1c41:baff:fe28:963"));
+        IPv6Address ipv6addr = IPv6Address.of("fe80::1c41:baff:fe28:963");
+        System.out.println(ipv6addr);
     }
 
     @Test

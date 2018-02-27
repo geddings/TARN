@@ -77,8 +77,10 @@ public class FlowFactoryImpl implements FlowFactory {
                              TransportPort srcPort, TransportPort dstPort) {
         Match.Builder builder = factory.buildMatch();
 
-        builder.setExact(MatchField.IN_PORT, inPort)
-                .setExact(MatchField.ETH_TYPE, EthType.IPv4);
+        builder.setExact(MatchField.IN_PORT, inPort);
+
+        if (srcIp.getIpVersion() == IPVersion.IPv4) builder.setExact(MatchField.ETH_TYPE, EthType.IPv4);
+        else if (srcIp.getIpVersion() == IPVersion.IPv6) builder.setExact(MatchField.ETH_TYPE, EthType.IPv6);
 
         if (srcIp.getIpVersion() == IPVersion.IPv4) builder.setExact(MatchField.IPV4_SRC, (IPv4Address) srcIp);
         else if (srcIp.getIpVersion() == IPVersion.IPv6) builder.setExact(MatchField.IPV6_SRC, (IPv6Address) srcIp);

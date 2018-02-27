@@ -13,12 +13,15 @@ import org.projectfloodlight.openflow.types.IpProtocol;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.projectfloodlight.openflow.types.TransportPort;
 
+import java.util.UUID;
+
 /**
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 2/26/18.
  */
 @JsonSerialize(using = TarnSessionSerializer.class)
 public class TarnIPv4Session implements TarnSession<IPv4Address> {
 
+    private final UUID id;
     private Direction direction;
     private final OFPort inPort;
     private final OFPort outPort;
@@ -34,6 +37,8 @@ public class TarnIPv4Session implements TarnSession<IPv4Address> {
 
     public TarnIPv4Session(IPv4 iPv4, PrefixMapping srcMapping, PrefixMapping dstMapping, OFPort inPort, OFPort
             outPort) {
+        id = UUID.randomUUID();
+
         this.inPort = inPort;
         this.outPort = outPort;
 
@@ -108,6 +113,11 @@ public class TarnIPv4Session implements TarnSession<IPv4Address> {
         } else {
             externalSrcPort = internalSrcPort = externalDstPort = internalDstPort = TransportPort.NONE;
         }
+    }
+
+    @Override
+    public UUID getId() {
+        return id;
     }
 
     @Override

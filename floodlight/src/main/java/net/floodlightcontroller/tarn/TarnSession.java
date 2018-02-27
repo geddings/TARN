@@ -5,6 +5,8 @@ import org.projectfloodlight.openflow.types.IpProtocol;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.projectfloodlight.openflow.types.TransportPort;
 
+import java.util.UUID;
+
 /**
  * Represents a TARN session. A TARN session is defined as a complete two-way communication between two devices, with
  * at least one device being a TARN device (i.e. has a configured prefix mapping).
@@ -29,6 +31,8 @@ public interface TarnSession<T extends IPAddress> {
     enum Direction {
         INCOMING, OUTGOING
     }
+
+    UUID getId();
 
     Direction getDirection();
 

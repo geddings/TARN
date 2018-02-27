@@ -168,7 +168,7 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
                             (ipv4.getDestinationAddress()).orElse(null), inPort, outPort);
                     log.info("TARN session created: {}", tarnSession);
                     tarnSessions.add(tarnSession);
-                    sw.write(flowFactory.buildFlows((TarnIPv4Session) tarnSession));
+                    sw.write(flowFactory.buildFlows(tarnSession));
                     OFPacketOut packetOut = buildPacketOut(sw, pi);
                     log.debug("Writing packetout: {}", packetOut);
                     sw.write(packetOut);
@@ -183,7 +183,7 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
                             (ipv6.getDestinationAddress()).orElse(null), inPort, outPort);
                     log.info("TARN session created: {}", tarnSession);
                     tarnSessions.add(tarnSession);
-                    sw.write(flowFactory.buildFlows((TarnIPv6Session) tarnSession));
+                    sw.write(flowFactory.buildFlows(tarnSession));
                     sw.write(buildPacketOut(sw, pi));
                     return Command.STOP;
                 }

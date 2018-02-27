@@ -13,12 +13,15 @@ import org.projectfloodlight.openflow.types.IpProtocol;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.projectfloodlight.openflow.types.TransportPort;
 
+import java.util.UUID;
+
 /**
  * @author Geddings Barrineau, geddings.barrineau@bigswitch.com on 2/26/18.
  */
 @JsonSerialize(using = TarnSessionSerializer.class)
 public class TarnIPv6Session implements TarnSession<IPv6Address> {
 
+    private UUID id;
     private Direction direction;
     private final OFPort inPort;
     private final OFPort outPort;
@@ -34,6 +37,8 @@ public class TarnIPv6Session implements TarnSession<IPv6Address> {
 
     public TarnIPv6Session(IPv6 iPv6, PrefixMapping srcMapping, PrefixMapping dstMapping, OFPort inPort, OFPort
             outPort) {
+        id = UUID.randomUUID();
+
         this.inPort = inPort;
         this.outPort = outPort;
 
@@ -86,6 +91,11 @@ public class TarnIPv6Session implements TarnSession<IPv6Address> {
         } else {
             externalSrcPort = internalSrcPort = externalDstPort = internalDstPort = TransportPort.NONE;
         }
+    }
+
+    @Override
+    public UUID getId() {
+        return id;
     }
 
     @Override

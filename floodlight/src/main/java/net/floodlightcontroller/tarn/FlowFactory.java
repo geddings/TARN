@@ -12,8 +12,8 @@ import java.util.List;
  */
 public interface FlowFactory {
 
-    U64 OUTGOING_FLOW_COOKIE = U64.of(1);
-    U64 INCOMING_FLOW_COOKIE = U64.of(2);
+    U64 OUTGOING_FLOW_COOKIE = U64.of(0);
+    U64 INCOMING_FLOW_COOKIE = U64.of(1);
 
     /**
      * Given a session object, build a list of flows that will match on the entire session, and perform any necessary rewrites.
@@ -21,8 +21,6 @@ public interface FlowFactory {
      * @param session the session defines the matches and rewrite actions
      * @return a list of flows that can be inserted
      */
-    List<OFMessage> buildFlows(TarnIPv4Session session);
-
-    List<OFMessage> buildFlows(TarnIPv6Session session);
+    List<OFMessage> buildFlows(TarnSession session);
 
 }

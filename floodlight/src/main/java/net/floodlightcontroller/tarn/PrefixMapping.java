@@ -32,7 +32,8 @@ public class PrefixMapping {
      * @param currentPrefix the current external prefix being mapped to the TARN device
      */
     @JsonCreator
-    PrefixMapping(@JsonProperty("internal-ip") String internalIp, @JsonProperty("external-prefix") String currentPrefix) {
+    public PrefixMapping(@JsonProperty("internal-ip") String internalIp, @JsonProperty("external-prefix") String
+            currentPrefix) {
         if (IPUtils.isIpv4Address(internalIp)) {
             this.internalIp = IPv4Address.of(internalIp);
             this.currentPrefix = IPv4AddressWithMask.of(currentPrefix);

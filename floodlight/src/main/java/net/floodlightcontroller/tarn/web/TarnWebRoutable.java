@@ -18,6 +18,8 @@ public class TarnWebRoutable implements RestletRoutable {
         router.attach("/mapping", MappingsResource.class);
         router.attach("/mapping/{internal-ip}", MappingResource.class);
         router.attach("/config", ConfigResource.class);
+        router.attach("/session", SessionsResource.class);
+        router.attach("/session/{session-id}", SessionResource.class);
         return router;
     }
 

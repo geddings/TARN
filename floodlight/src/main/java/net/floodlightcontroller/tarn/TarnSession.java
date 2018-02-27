@@ -32,7 +32,15 @@ public interface TarnSession<T extends IPAddress> {
         INCOMING, OUTGOING
     }
 
+    enum Status {
+        ACTIVE, INACTIVE
+    }
+
     UUID getId();
+
+    Status getStatus();
+
+    void setStatus(Status status);
 
     Direction getDirection();
 
@@ -46,21 +54,21 @@ public interface TarnSession<T extends IPAddress> {
 
     IpProtocol getIpProtocol();
 
-    T getExternalSrcIp();
-
-    T getExternalDstIp();
-
-    TransportPort getExternalSrcPort();
-
-    TransportPort getExternalDstPort();
-
     T getInternalSrcIp();
 
     T getInternalDstIp();
 
+    T getExternalSrcIp();
+
+    T getExternalDstIp();
+
     TransportPort getInternalSrcPort();
 
     TransportPort getInternalDstPort();
+
+    TransportPort getExternalSrcPort();
+
+    TransportPort getExternalDstPort();
 
     boolean hasTransportPorts();
 }

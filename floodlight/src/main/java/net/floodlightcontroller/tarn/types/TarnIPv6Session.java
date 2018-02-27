@@ -22,6 +22,7 @@ import java.util.UUID;
 public class TarnIPv6Session implements TarnSession<IPv6Address> {
 
     private UUID id;
+    private Status status;
     private Direction direction;
     private final OFPort inPort;
     private final OFPort outPort;
@@ -38,6 +39,8 @@ public class TarnIPv6Session implements TarnSession<IPv6Address> {
     public TarnIPv6Session(IPv6 iPv6, PrefixMapping srcMapping, PrefixMapping dstMapping, OFPort inPort, OFPort
             outPort) {
         id = UUID.randomUUID();
+
+        status = Status.ACTIVE;
 
         this.inPort = inPort;
         this.outPort = outPort;
@@ -96,6 +99,16 @@ public class TarnIPv6Session implements TarnSession<IPv6Address> {
     @Override
     public UUID getId() {
         return id;
+    }
+
+    @Override
+    public Status getStatus() {
+        return status;
+    }
+
+    @Override
+    public void setStatus(Status status) {
+        this.status = status;
     }
 
     @Override

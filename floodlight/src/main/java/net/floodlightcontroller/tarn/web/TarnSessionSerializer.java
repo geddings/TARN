@@ -18,6 +18,7 @@ public class TarnSessionSerializer extends JsonSerializer<TarnSession> {
         jgen.writeStartObject();
 
         jgen.writeStringField("id", session.getId().toString());
+        jgen.writeStringField("status", session.getStatus().name());
         jgen.writeStringField("direction", session.getDirection().name());
 
         String protocolName = "";

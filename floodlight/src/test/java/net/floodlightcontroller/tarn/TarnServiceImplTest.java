@@ -1,5 +1,7 @@
 package net.floodlightcontroller.tarn;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import net.floodlightcontroller.core.FloodlightContext;
 import net.floodlightcontroller.core.IFloodlightProviderService;
 import net.floodlightcontroller.core.IOFSwitch;
@@ -24,6 +26,7 @@ import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.projectfloodlight.openflow.exceptions.OFParseError;
 import org.projectfloodlight.openflow.protocol.*;
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
@@ -125,5 +128,25 @@ public class TarnServiceImplTest extends FloodlightTestCase {
 
         randomizer.receive(sw, pi, cntx);
         Assert.assertTrue(!randomizer.getSessions().isEmpty());
+    }
+
+    @Test
+    public void testFlowRem() throws OFParseError {
+        byte[] flowrem = new byte[] {
+                0x06, 0x0b, 0x00, 0x58, 0x00, 0x00, 0x00, 0x00,
+                (byte) 0xb2, 0x71, 0x4d, 0x7a, 0x27, 0x35, (byte) 0xca, (byte) 0xbd,
+                0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0d,
+                0x06, (byte) 0xac, (byte) 0xfc, 0x00, 0x00, 0x05, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x72,
+                0x00, 0x01, 0x00, 0x22, (byte) 0x80, 0x00, 0x00, 0x04,
+                0x00, 0x00, 0x00, 0x02, (byte) 0x80, 0x00, 0x0a, 0x02,
+                0x08, 0x00, (byte) 0x80, 0x00, 0x16, 0x04, 0x50, 0x00,
+                (byte) 0xa2, 0x5e, (byte) 0x80, 0x00, 0x18, 0x04, 0x0a, 0x00,
+                0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        };
+
+        OFMessage ofMessage = OFFactories.getGenericReader().readFrom(Unpooled.wrappedBuffer(flowrem));
+        System.out.println(ofMessage);
     }
 }

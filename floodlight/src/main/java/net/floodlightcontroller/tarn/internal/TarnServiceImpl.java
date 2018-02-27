@@ -20,17 +20,16 @@ import net.floodlightcontroller.tarn.*;
 import net.floodlightcontroller.tarn.types.TarnIPv4Session;
 import net.floodlightcontroller.tarn.types.TarnIPv6Session;
 import net.floodlightcontroller.tarn.web.TarnWebRoutable;
+import net.floodlightcontroller.util.OFMessageDamper;
 import net.floodlightcontroller.util.OFMessageUtils;
-import org.projectfloodlight.openflow.protocol.OFMessage;
-import org.projectfloodlight.openflow.protocol.OFPacketIn;
-import org.projectfloodlight.openflow.protocol.OFPacketOut;
-import org.projectfloodlight.openflow.protocol.OFType;
+import org.projectfloodlight.openflow.protocol.*;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.types.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by geddingsbarrineau on 6/12/17.
@@ -41,6 +40,7 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
     private IFloodlightProviderService floodlightProvider;
     private IRestApiService restApiService;
     private IDeviceService deviceService;
+    private OFMessageDamper messageDamper;
 
     static final EventBus eventBus = new EventBus();
 
@@ -94,6 +94,8 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
         floodlightProvider = context.getServiceImpl(IFloodlightProviderService.class);
         restApiService = context.getServiceImpl(IRestApiService.class);
         deviceService = context.getServiceImpl(IDeviceService.class);
+
+        messageDamper = new OFMessageDamper(1000, EnumSet.of(OFType.FLOW_MOD, OFType.PACKET_OUT), 250);
         
         /* Create event listeners */
         net.floodlightcontroller.tarn.EventListener eventListener = new net.floodlightcontroller.tarn.EventListener
@@ -161,7 +163,8 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
             if (eth.getEtherType() == EthType.IPv4) {
                 IPv4 ipv4 = (IPv4) eth.getPayload();
                 if (mappingHandler.isTarnDevice(ipv4)) {
-                    log.debug("IPv4 packet with source {} and destination {} contains a TARN device. Attempting to create TARN session.", ipv4.getSourceAddress(), ipv4.getDestinationAddress());
+                    log.debug("IPv4 packet with source {} and destination {} contains a TARN device. Attempting to " +
+                            "create TARN session.", ipv4.getSourceAddress(), ipv4.getDestinationAddress());
                     OFPort outPort = getOutPort(eth.getDestinationMACAddress(), sw.getId());
                     TarnSession tarnSession = new TarnIPv4Session(ipv4, mappingHandler.getAssociatedMapping
                             (ipv4.getSourceAddress()).orElse(null), mappingHandler.getAssociatedMapping
@@ -171,7 +174,7 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
                     sw.write(flowFactory.buildFlows(tarnSession));
                     OFPacketOut packetOut = buildPacketOut(sw, pi);
                     log.debug("Writing packetout: {}", packetOut);
-                    sw.write(packetOut);
+                    messageDamper.write(sw, packetOut);
                     return Command.STOP;
                 }
             } else if (eth.getEtherType() == EthType.IPv6) {
@@ -188,7 +191,17 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
                     return Command.STOP;
                 }
             }
+        } else if (msg.getType() == OFType.FLOW_REMOVED) {
+            log.debug("Flow removed message received.");
+            U64 cookie = ((OFFlowRemoved) msg).getCookie();
+            List<TarnSession> sessions = tarnSessions.stream()
+                    .filter(s -> U64.of(s.getId().getLeastSignificantBits()).equals(cookie))
+                    .collect(Collectors.toList());
 
+            log.debug("Setting sessions to status inactive: ", sessions.stream().map(TarnSession::getId).collect
+                    (Collectors.toList()));
+            sessions.forEach(s -> s.setStatus(TarnSession.Status.INACTIVE));
+            return sessions.isEmpty() ? Command.CONTINUE : Command.STOP;
         }
 
         return Command.CONTINUE;

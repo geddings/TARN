@@ -22,6 +22,7 @@ import java.util.UUID;
 public class TarnIPv4Session implements TarnSession<IPv4Address> {
 
     private final UUID id;
+    private Status status;
     private Direction direction;
     private final OFPort inPort;
     private final OFPort outPort;
@@ -38,6 +39,8 @@ public class TarnIPv4Session implements TarnSession<IPv4Address> {
     public TarnIPv4Session(IPv4 iPv4, PrefixMapping srcMapping, PrefixMapping dstMapping, OFPort inPort, OFPort
             outPort) {
         id = UUID.randomUUID();
+
+        status = Status.ACTIVE;
 
         this.inPort = inPort;
         this.outPort = outPort;
@@ -118,6 +121,16 @@ public class TarnIPv4Session implements TarnSession<IPv4Address> {
     @Override
     public UUID getId() {
         return id;
+    }
+
+    @Override
+    public Status getStatus() {
+        return status;
+    }
+
+    @Override
+    public void setStatus(Status status) {
+        this.status = status;
     }
 
     @Override

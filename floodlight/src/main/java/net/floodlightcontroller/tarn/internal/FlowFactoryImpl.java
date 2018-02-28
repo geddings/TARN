@@ -1,12 +1,12 @@
 package net.floodlightcontroller.tarn.internal;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import net.floodlightcontroller.tarn.FlowFactory;
 import net.floodlightcontroller.tarn.TarnSession;
-import net.floodlightcontroller.tarn.types.TarnIPv4Session;
-import net.floodlightcontroller.tarn.types.TarnIPv6Session;
-import org.projectfloodlight.openflow.protocol.*;
+import org.projectfloodlight.openflow.protocol.OFFactories;
+import org.projectfloodlight.openflow.protocol.OFFactory;
+import org.projectfloodlight.openflow.protocol.OFMessage;
+import org.projectfloodlight.openflow.protocol.OFVersion;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
 import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.protocol.match.MatchField;
@@ -37,6 +37,8 @@ public class FlowFactoryImpl implements FlowFactory {
 
     @Override
     public List<OFMessage> buildFlows(TarnSession session) {
+        log.debug("Building flows for session {}.", session.getId());
+        
         /* Build outgoing flow: internal -> external */
         U64 cookie1 = U64.of(session.getId().getLeastSignificantBits());
         OFMessage outgoingFlow = buildFlow(buildOutgoingMatch(session), buildOutgoingActions(session), cookie1);

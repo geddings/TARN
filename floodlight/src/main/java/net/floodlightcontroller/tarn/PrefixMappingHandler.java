@@ -1,7 +1,9 @@
 package net.floodlightcontroller.tarn;
 
+import net.floodlightcontroller.packet.Ethernet;
 import net.floodlightcontroller.packet.IPv4;
 import net.floodlightcontroller.packet.IPv6;
+import org.projectfloodlight.openflow.types.EthType;
 import org.projectfloodlight.openflow.types.IPAddress;
 
 import java.util.Collection;
@@ -76,6 +78,12 @@ public class PrefixMappingHandler {
 
     public Boolean isTarnDevice(IPv6 iPv6) {
         return containsInternalIp(iPv6) || containsExternalIp(iPv6);
+    }
+    
+    public Boolean isTarnDevice(Ethernet eth) {
+        if (eth.getEtherType() == EthType.IPv4) return isTarnDevice((IPv4) eth.getPayload());
+        else if (eth.getEtherType() == EthType.IPv6) return isTarnDevice((IPv6) eth.getPayload());
+        else return false;
     }
 
     public Boolean isInternalIp(IPAddress ipAddress) {

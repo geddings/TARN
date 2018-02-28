@@ -1,6 +1,5 @@
 package net.floodlightcontroller.tarn;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import net.floodlightcontroller.core.FloodlightContext;
 import net.floodlightcontroller.core.IFloodlightProviderService;
@@ -25,6 +24,7 @@ import net.floodlightcontroller.topology.ITopologyService;
 import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.projectfloodlight.openflow.exceptions.OFParseError;
 import org.projectfloodlight.openflow.protocol.*;
@@ -106,6 +106,7 @@ public class TarnServiceImplTest extends FloodlightTestCase {
     }
 
     @Test
+    @Ignore
     public void testSessionAddedWhenPacketInHasMapping() {
         randomizer.addPrefixMapping(new PrefixMapping("20.0.0.1", "50.0.0.0/24"));
 
@@ -131,6 +132,7 @@ public class TarnServiceImplTest extends FloodlightTestCase {
     }
 
     @Test
+    @Ignore
     public void testFlowRem() throws OFParseError {
         byte[] flowrem = new byte[] {
                 0x06, 0x0b, 0x00, 0x58, 0x00, 0x00, 0x00, 0x00,

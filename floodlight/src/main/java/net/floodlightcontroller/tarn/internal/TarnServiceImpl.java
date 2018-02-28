@@ -31,6 +31,8 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.projectfloodlight.openflow.types.IPv4Address.*;
+
 /**
  * Created by geddingsbarrineau on 6/12/17.
  */
@@ -155,56 +157,70 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
             return Command.CONTINUE;
         }
 
-        if (msg.getType() == OFType.PACKET_IN) {
-            OFPacketIn pi = (OFPacketIn) msg;
-            OFPort inPort = OFMessageUtils.getInPort(pi);
-            Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
-
-            if (eth.getEtherType() == EthType.IPv4) {
-                IPv4 ipv4 = (IPv4) eth.getPayload();
-                if (mappingHandler.isTarnDevice(ipv4)) {
-                    log.debug("IPv4 packet with source {} and destination {} contains a TARN device. Attempting to " +
-                            "create TARN session.", ipv4.getSourceAddress(), ipv4.getDestinationAddress());
-                    OFPort outPort = getOutPort(eth.getDestinationMACAddress(), sw.getId());
-                    TarnSession tarnSession = new TarnIPv4Session(ipv4, mappingHandler.getAssociatedMapping
-                            (ipv4.getSourceAddress()).orElse(null), mappingHandler.getAssociatedMapping
-                            (ipv4.getDestinationAddress()).orElse(null), inPort, outPort);
-                    log.info("TARN session created: {}", tarnSession);
-                    tarnSessions.add(tarnSession);
-                    sw.write(flowFactory.buildFlows(tarnSession));
-                    OFPacketOut packetOut = buildPacketOut(sw, pi);
-                    log.debug("Writing packetout: {}", packetOut);
-                    messageDamper.write(sw, packetOut);
-                    return Command.STOP;
-                }
-            } else if (eth.getEtherType() == EthType.IPv6) {
-                IPv6 ipv6 = (IPv6) eth.getPayload();
-                if (mappingHandler.isTarnDevice(ipv6)) {
-                    OFPort outPort = getOutPort(eth.getDestinationMACAddress(), sw.getId());
-                    TarnSession tarnSession = new TarnIPv6Session(ipv6, mappingHandler.getAssociatedMapping
-                            (ipv6.getSourceAddress()).orElse(null), mappingHandler.getAssociatedMapping
-                            (ipv6.getDestinationAddress()).orElse(null), inPort, outPort);
-                    log.info("TARN session created: {}", tarnSession);
-                    tarnSessions.add(tarnSession);
-                    sw.write(flowFactory.buildFlows(tarnSession));
-                    sw.write(buildPacketOut(sw, pi));
-                    return Command.STOP;
-                }
-            }
-        } else if (msg.getType() == OFType.FLOW_REMOVED) {
-            log.debug("Flow removed message received.");
-            U64 cookie = ((OFFlowRemoved) msg).getCookie();
-            List<TarnSession> sessions = tarnSessions.stream()
-                    .filter(s -> U64.of(s.getId().getLeastSignificantBits()).equals(cookie))
-                    .collect(Collectors.toList());
-
-            log.debug("Setting sessions to status inactive: ", sessions.stream().map(TarnSession::getId).collect
-                    (Collectors.toList()));
-            sessions.forEach(s -> s.setStatus(TarnSession.Status.INACTIVE));
-            return sessions.isEmpty() ? Command.CONTINUE : Command.STOP;
+        switch (msg.getType()) {
+            case PACKET_IN:
+                return handlePacketIn((OFPacketIn) msg, sw, cntx);
+            case FLOW_REMOVED:
+                return handleFlowRemoved((OFFlowRemoved) msg);
+            default:
+                return Command.CONTINUE;
         }
+    }
 
+    private Command handlePacketIn(OFPacketIn pi, IOFSwitch sw, FloodlightContext cntx) {
+        OFPort inPort = OFMessageUtils.getInPort(pi);
+        Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
+
+        if (mappingHandler.isTarnDevice(eth)) {
+            OFPort outPort = getOutPort(eth.getDestinationMACAddress(), sw.getId());
+            TarnSession tarnSession = buildTarnSession(eth, inPort, outPort);
+            if (tarnSession != null) {
+                tarnSessions.add(tarnSession);
+                sw.write(flowFactory.buildFlows(tarnSession));
+                sw.write(buildPacketOut(sw, pi));
+                return Command.STOP;
+            }
+        }
+        
         return Command.CONTINUE;
+    }
+
+    private TarnSession buildTarnSession(Ethernet eth, OFPort inPort, OFPort outPort) {
+        PrefixMapping srcMapping;
+        PrefixMapping dstMapping;
+        IPAddress srcAddress;
+        IPAddress dstAddress;
+
+        if (eth.getEtherType() == EthType.IPv4) {
+            IPv4 ipv4 = (IPv4) eth.getPayload();
+            srcAddress = ipv4.getSourceAddress();
+            dstAddress = ipv4.getDestinationAddress();
+            srcMapping = mappingHandler.getAssociatedMapping(srcAddress).orElse(null);
+            dstMapping = mappingHandler.getAssociatedMapping(dstAddress).orElse(null);
+            return new TarnIPv4Session(ipv4, srcMapping, dstMapping, inPort, outPort);
+        } else if (eth.getEtherType() == EthType.IPv6) {
+            IPv6 ipv6 = (IPv6) eth.getPayload();
+            srcAddress = ipv6.getSourceAddress();
+            dstAddress = ipv6.getDestinationAddress();
+            srcMapping = mappingHandler.getAssociatedMapping(srcAddress).orElse(null);
+            dstMapping = mappingHandler.getAssociatedMapping(dstAddress).orElse(null);
+            return new TarnIPv6Session(ipv6, srcMapping, dstMapping, inPort, outPort);
+        }
+        
+        return null;
+    }
+
+    private Command handleFlowRemoved(OFFlowRemoved fr) {
+        log.debug("Flow removed message received.");
+        U64 cookie = fr.getCookie();
+        List<TarnSession> sessions = tarnSessions.stream()
+                .filter(s -> U64.of(s.getId().getLeastSignificantBits()).equals(cookie))
+                .collect(Collectors.toList());
+
+        log.debug("Setting sessions to status inactive: ", sessions.stream().map(TarnSession::getId).collect
+                (Collectors.toList()));
+        sessions.forEach(s -> s.setStatus(TarnSession.Status.INACTIVE));
+        return sessions.isEmpty() ? Command.CONTINUE : Command.STOP;
     }
 
     private OFPacketOut buildPacketOut(IOFSwitch sw, OFPacketIn pi) {
@@ -234,7 +250,7 @@ public class TarnServiceImpl implements IFloodlightModule, TarnService, IOFMessa
      */
     public Optional<SwitchPort> getAttachmentPoint(MacAddress macAddress, DatapathId dpid) {
         /* Get the device associated with the destination mac address */
-        Iterator<? extends IDevice> iter = deviceService.queryDevices(macAddress, VlanVid.ZERO, IPv4Address.NONE,
+        Iterator<? extends IDevice> iter = deviceService.queryDevices(macAddress, VlanVid.ZERO, NONE,
                 IPv6Address.NONE, DatapathId.NONE, OFPort.ZERO);
         if (iter.hasNext()) {
             IDevice nextHop = iter.next();

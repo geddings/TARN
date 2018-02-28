@@ -106,12 +106,12 @@ public class TarnServiceImplTest extends FloodlightTestCase {
     }
 
     @Test
-    @Ignore
     public void testSessionAddedWhenPacketInHasMapping() {
         randomizer.addPrefixMapping(new PrefixMapping("20.0.0.1", "50.0.0.0/24"));
 
         IOFSwitch sw = createNiceMock(IOFSwitch.class);
         EasyMock.expect(sw.getId()).andReturn(DatapathId.of(1)).anyTimes();
+        expect(sw.getOFFactory()).andReturn(OFFactories.getFactory(OFVersion.OF_15)).anyTimes();
         EasyMock.replay(sw);
 
         Match match = factory.buildMatch().setExact(MatchField.IN_PORT, OFPort.of(1)).build();

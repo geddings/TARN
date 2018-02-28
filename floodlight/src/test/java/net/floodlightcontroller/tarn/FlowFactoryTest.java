@@ -30,29 +30,6 @@ public class FlowFactoryTest {
     }
 
     @Test
-    @Ignore
-    public void testOneWayFlowRules() {
-        IPv4 iPv4 = new IPv4().setProtocol(IpProtocol.ICMP)
-                .setSourceAddress("10.0.0.1")
-                .setDestinationAddress("50.0.0.1");
-        PrefixMapping dstMapping = new PrefixMapping("50.0.0.1", "80.0.0.0/24");
-        TarnIPv4Session session = new TarnIPv4Session(iPv4, null, dstMapping, OFPort.of(1), OFPort.of(2));
-
-        List<OFMessage> flows = flowFactory.buildFlows(session);
-
-        for (OFMessage flow : flows) {
-            OFFlowAdd add = (OFFlowAdd) flow;
-            if (add.getCookie().equals(FlowFactory.OUTGOING_FLOW_COOKIE)) {
-                assertEquals(session.getExternalSrcIp(), add.getMatch().get(MatchField.IPV4_SRC));
-                assertEquals(session.getExternalDstIp(), add.getMatch().get(MatchField.IPV4_DST));
-            } else {
-                assertEquals(session.getInternalSrcIp(), add.getMatch().get(MatchField.IPV4_SRC));
-                assertEquals(session.getInternalDstIp(), add.getMatch().get(MatchField.IPV4_DST));
-            }
-        }
-    }
-
-    @Test
     public void testActions() {
         IPv4 iPv4 = new IPv4().setProtocol(IpProtocol.ICMP)
                 .setSourceAddress("10.0.0.1")

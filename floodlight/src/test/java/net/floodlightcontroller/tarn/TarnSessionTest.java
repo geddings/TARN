@@ -41,8 +41,8 @@ public class TarnSessionTest {
         IPv6Address srcIp = (IPv6Address) IPUtils.getRandomAddressFrom(docPrefix);
         IPv6Address dstIp = (IPv6Address) IPUtils.getRandomAddressFrom(docPrefix);
 
-        IPAddress internalIp = srcIp;
-        IPAddressWithMask externalPrefix = IPv6AddressWithMask.of("2001:db8:1234::/48");
+        IPv6Address internalIp = srcIp;
+        IPv6AddressWithMask externalPrefix = IPv6AddressWithMask.of("2001:db8:1234::/48");
         IPv6 outgoingIpv6 = new IPv6().setNextHeader(IpProtocol.ICMP)
                 .setSourceAddress(srcIp)
                 .setDestinationAddress(dstIp);

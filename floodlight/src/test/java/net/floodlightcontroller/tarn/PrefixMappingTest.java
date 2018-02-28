@@ -1,8 +1,11 @@
 package net.floodlightcontroller.tarn;
 
+import net.floodlightcontroller.tarn.utils.IPUtils;
 import org.junit.Test;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.IPv4AddressWithMask;
+import org.projectfloodlight.openflow.types.IPv6Address;
+import org.projectfloodlight.openflow.types.IPv6AddressWithMask;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -22,6 +25,24 @@ public class PrefixMappingTest {
         assertEquals(internalIp, mapping.getInternalIp());
         assertEquals(externalPrefix, mapping.getCurrentPrefix());
         assertTrue(mapping.isInternalIp(internalIp));
-        assertTrue(mapping.isExternalIp(IPv4Address.of("20.0.0.1")));
+        assertTrue(mapping.isExternalIp(IPUtils.getRandomAddressFrom(externalPrefix)));
+    }
+
+    @Test
+    public void testCreateIPv6PrefixMapping() {
+        IPv6Address internalIp = IPv6Address.of("fe80::1c41:baff:fe28:963");
+        IPv6AddressWithMask externalPrefix = IPv6AddressWithMask.of("2001:db8:1234::/48");
+
+        PrefixMapping mapping = new PrefixMapping(internalIp.toString(), externalPrefix.toString());
+
+        assertEquals(internalIp, mapping.getInternalIp());
+        assertEquals(externalPrefix, mapping.getCurrentPrefix());
+        assertTrue(mapping.isInternalIp(internalIp));
+        assertTrue(mapping.isExternalIp(IPUtils.getRandomAddressFrom(externalPrefix)));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreatePrefixMappingThrowsException() {
+        new PrefixMapping("Not a real IP", "Not a real prefix");
     }
 }

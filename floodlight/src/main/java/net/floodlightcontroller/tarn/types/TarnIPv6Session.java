@@ -27,10 +27,10 @@ public class TarnIPv6Session implements TarnSession<IPv6Address> {
     private final OFPort inPort;
     private final OFPort outPort;
     private final IpProtocol ipProtocol;
-    private final IPv6Address externalSrcIp;
-    private final IPv6Address externalDstIp;
-    private final IPv6Address internalSrcIp;
-    private final IPv6Address internalDstIp;
+    private IPv6Address externalSrcIp;
+    private IPv6Address externalDstIp;
+    private IPv6Address internalSrcIp;
+    private IPv6Address internalDstIp;
     private final TransportPort externalSrcPort;
     private final TransportPort internalSrcPort;
     private final TransportPort externalDstPort;
@@ -46,19 +46,16 @@ public class TarnIPv6Session implements TarnSession<IPv6Address> {
         this.outPort = outPort;
 
         if (srcMapping != null) {
-            // This means that the IPv6 packet is an egress packet and contains internal addresses
+            // This means that the IPv4 packet is an egress packet and contains internal addresses
             if (srcMapping.isInternalIp(iPv6.getSourceAddress())) {
                 direction = Direction.OUTGOING;
                 internalSrcIp = iPv6.getSourceAddress();
-                externalSrcIp = (IPv6Address) IPUtils.getRandomAddressFrom(srcMapping.getCurrentPrefix());
+                externalDstIp = (IPv6Address) IPUtils.getRandomAddressFrom(srcMapping.getCurrentPrefix());
             } else {
                 direction = Direction.INCOMING;
                 externalSrcIp = iPv6.getSourceAddress();
-                internalSrcIp = (IPv6Address) srcMapping.getInternalIp();
+                internalDstIp = (IPv6Address) srcMapping.getInternalIp();
             }
-        } else {
-            externalSrcIp = iPv6.getSourceAddress();
-            internalSrcIp = iPv6.getSourceAddress();
         }
 
         if (dstMapping != null) {
@@ -66,16 +63,27 @@ public class TarnIPv6Session implements TarnSession<IPv6Address> {
                 // Traffic coming in is internal traffic: internal -> external
                 direction = Direction.OUTGOING;
                 internalDstIp = iPv6.getDestinationAddress();
-                externalDstIp = (IPv6Address) IPUtils.getRandomAddressFrom(dstMapping.getCurrentPrefix());
+                externalSrcIp = (IPv6Address) IPUtils.getRandomAddressFrom(dstMapping.getCurrentPrefix());
             } else {
                 // Traffic coming in is external traffic: external -> internal
                 direction = Direction.INCOMING;
                 externalDstIp = iPv6.getDestinationAddress();
-                internalDstIp = (IPv6Address) dstMapping.getInternalIp();
+                internalSrcIp = (IPv6Address) dstMapping.getInternalIp();
             }
-        } else {
-            externalDstIp = iPv6.getDestinationAddress();
-            internalDstIp = iPv6.getDestinationAddress();
+        }
+
+        if (internalSrcIp == null && externalDstIp == null) {
+            if (direction == Direction.OUTGOING) {
+                internalSrcIp = externalDstIp = iPv6.getSourceAddress();
+            } else {
+                internalSrcIp = externalDstIp = iPv6.getDestinationAddress();
+            }
+        } else if (internalDstIp == null && externalSrcIp == null) {
+            if (direction == Direction.OUTGOING) {
+                internalDstIp = externalSrcIp = iPv6.getDestinationAddress();
+            } else {
+                internalDstIp = externalSrcIp = iPv6.getSourceAddress();
+            }
         }
 
         ipProtocol = iPv6.getNextHeader();

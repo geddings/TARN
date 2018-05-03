@@ -1,4 +1,0 @@
-
-
-class BGPRouter():
-    pass

@@ -1,0 +1,11 @@
+# main links
+main:
+  - title: "Quick-Start Guide"
+    url: /pages/quick-start-guide/
+  - title: "Posts"
+    url: /year-archive/
+  - title: "Tutorials"
+    url: /tutorials-archive/
+  - title: "About"
+    url: /about/
+
